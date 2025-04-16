@@ -6,7 +6,7 @@
 
 #define X_RT &kp BSLH
 #define X_RM &kp SQT
-#define X_RB &kp RSHFT
+#define X_RB MAGIC_SHIFT
 #define X_RH &kp RALT
 
 #define ZMK_BASE_LAYER(name, LT, RT, LM, RM, LB, RB, LH, RH) \
