@@ -1,19 +1,29 @@
 /*
  * MurphPad — modernized keymap for zmk-workspace
  *
- * 6×5 numpad + left macro column, 2 rotary encoders.
- * nice!nano v1 (nRF52840).
+ * 6×5 matrix, nice!nano v1 (nRF52840).
+ *
+ * Physical layout (27 top-surface keys + 3 PCB-bottom keys).
+ * The shield's physical_layout snakes matrix positions diagonally:
+ *
+ *         x=28    x=84    x=140   x=196   x=252
+ * y=28:           [0,0]   [0,1]   [0,2]   [0,3]
+ * y=84:           [0,4]   [1,0]   [1,1]   [1,2]
+ * y=140:          [1,3]   [1,4]   [2,0]   [2,1]
+ * y=196:  [2,2]   [2,3]   [2,4]   [3,0]e  [3,1]
+ * y=252:  [3,2]   [3,3]   [3,4]   [4,0]   [4,1]
+ * y=308:  [4,2]   [4,3]   [4,4]   [5,0]   [5,1]
+ * y=364:          [5,2]g  [5,3]g  [5,4]g
+ *
+ * g=PCB bottom (ghost), e=encoder 1
  *
  * Layers:
- *   DEF  — numpad with media/macro column
+ *   DEF  — numpad with utility row
  *   NAV  — navigation & F-keys
  *   SYS  — BT profiles, RGB, output toggle, bootloader
  *
- * Combos (top-left macro keys):
- *   1+2  → bootloader
- *   1+3  → sys_reset
- *   1+4  → BT next
- *   1+6  → BT clear
+ * Encoder 1 (left):  volume (DEF), brightness (NAV), PgUp/Dn (SYS)
+ * Encoder 2 (right): PgUp/Dn (DEF), Left/Right (NAV), Vol (SYS)
  */
 
 #include <behaviors.dtsi>
@@ -30,45 +40,7 @@
 &encoder_1 { status = "okay"; };
 &encoder_2 { status = "okay"; };
 
-/* ── Combos (macro-column positions) ─────────────── */
 / {
-    combos {
-        compatible = "zmk,combos";
-
-        combo_bootloader {
-            timeout-ms = <300>;
-            key-positions = <0 5>;   /* row0col0 + row1col0 */
-            bindings = <&bootloader>;
-        };
-
-        combo_reset {
-            timeout-ms = <300>;
-            key-positions = <0 10>;  /* row0col0 + row2col0 */
-            bindings = <&sys_reset>;
-        };
-
-        combo_bt_nxt {
-            timeout-ms = <300>;
-            key-positions = <0 15>;  /* row0col0 + row3col0 */
-            bindings = <&bt BT_NXT>;
-        };
-
-        combo_bt_clr {
-            timeout-ms = <300>;
-            key-positions = <0 25>;  /* row0col0 + row5col0 */
-            bindings = <&bt BT_CLR>;
-        };
-    };
-
-    conditional_layers {
-        compatible = "zmk,conditional-layers";
-
-        sys_layer {
-            if-layers = <NAV>;
-            then-layer = <SYS>;
-        };
-    };
-
     sensors {
         compatible = "zmk,keymap-sensors";
         sensors = <&encoder_1 &encoder_2>;
@@ -77,42 +49,74 @@
     keymap {
         compatible = "zmk,keymap";
 
-        /* ── DEF: Numpad ─────────────────────────── */
+        /* ── DEF: Numpad ─────────────────────────────────────────────── *
+         *         x=28    x=84    x=140   x=196   x=252
+         * y=28:           CtlAltC ESC     BSPC    Gui+D
+         * y=84:           TAB     KpNum   KP/     KP*
+         * y=140:          F5      KP7     KP8     KP9
+         * y=196:  MUTE    KP4     KP5     KP6     KP-
+         * y=252:  NAV     KP1     KP2     KP3     KP+
+         * y=308:  SYS     KP0     KP0     KP.     KPEnt
+         * y=364:          [g]     [g]     [g]
+         */
         default_layer {
             bindings = <
-        /*  macro col     col1          col2           col3             col4          */
-            &kp N1        &kp TAB       &kp F5         &kp LC(LA(C))    &kp LG(D)
-            &kp N2        &kp ESC       &kp KP_DIVIDE  &kp KP_MULTIPLY  &kp KP_MINUS
-            &kp N3        &kp KP_N7     &kp KP_N8      &kp KP_N9        &kp KP_PLUS
-            &kp C_MUTE    &kp KP_N4     &kp KP_N5      &kp KP_N6        &kp KP_ENTER
-            &mo NAV       &kp KP_N1     &kp KP_N2      &kp KP_N3        &kp KP_ENTER
-            &mo SYS       &kp KP_N0     &none          &kp KP_DOT       &kp C_PP
+        /*  [0,0]@84,28   [0,1]@140,28      [0,2]@196,28   [0,3]@252,28     [0,4]@84,84   */
+            &kp LC(LA(C)) &kp ESC           &kp BSPC       &kp LG(D)        &kp TAB
+        /*  [1,0]@140,84  [1,1]@196,84      [1,2]@252,84   [1,3]@84,140     [1,4]@140,140 */
+            &kp KP_NUM    &kp KP_DIVIDE     &kp KP_MULTIPLY &kp F5          &kp KP_N7
+        /*  [2,0]@196,140 [2,1]@252,140     [2,2]@28,196   [2,3]@84,196     [2,4]@140,196 */
+            &kp KP_N8     &kp KP_N9         &kp C_MUTE     &kp KP_N4        &kp KP_N5
+        /*  [3,0]@196,196 [3,1]@252,196     [3,2]@28,252   [3,3]@84,252     [3,4]@140,252 */
+            &kp KP_N6     &kp KP_MINUS      &mo NAV        &kp KP_N1        &kp KP_N2
+        /*  [4,0]@196,252 [4,1]@252,252     [4,2]@28,308   [4,3]@84,308     [4,4]@140,308 */
+            &kp KP_N3     &kp KP_PLUS       &mo SYS        &kp KP_N0        &kp KP_N0
+        /*  [5,0]@196,308 [5,1]@252,308     [5,2]@84,364g  [5,3]@140,364g   [5,4]@196,364g*/
+            &kp KP_DOT    &kp KP_ENTER      &kp KP_N0      &kp KP_N0        &kp KP_DOT
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN &inc_dec_kp PG_UP PG_DN>;
         };
 
-        /* ── NAV: Navigation & F-keys ────────────── */
+        /* ── NAV: Navigation & F-keys ────────────────────────────────── *
+         *         x=28    x=84    x=140   x=196   x=252
+         * y=28:           F10     F1      F2      F3
+         * y=84:           F4      F11     F5      F6
+         * y=140:          F7      F8      F12     F9
+         * y=196:  ▽enc    HOME    UP      END     PgUp
+         * y=252:  ▽held   LEFT    DOWN    RIGHT   PgDn
+         * y=308:  ▽       INS     DEL     PSCRN   ENTER
+         * y=364:          [g]     [g]     [g]
+         */
         nav_layer {
             bindings = <
-            &trans        &kp F1        &kp F2         &kp F3           &kp F4
-            &trans        &kp F5        &kp F6         &kp F7           &kp F8
-            &trans        &kp HOME      &kp UP         &kp END          &kp PG_UP
-            &trans        &kp LEFT      &kp DOWN       &kp RIGHT        &kp PG_DN
-            &trans        &kp INS       &kp DEL        &kp PSCRN        &kp ENTER
-            &trans        &kp CAPS      &none          &kp KP_NUM  &trans
+            &kp F10       &kp F1            &kp F2         &kp F3           &kp F4
+            &kp F11       &kp F5            &kp F6         &kp F7           &kp F8
+            &kp F12       &kp F9            &trans         &kp HOME         &kp UP
+            &kp END       &kp PG_UP         &trans         &kp LEFT         &kp DOWN
+            &kp RIGHT     &kp PG_DN         &trans         &kp INS          &kp DEL
+            &kp PSCRN     &kp ENTER         &none          &none            &none
             >;
             sensor-bindings = <&inc_dec_kp C_BRI_UP C_BRI_DN &inc_dec_kp RIGHT LEFT>;
         };
 
-        /* ── SYS: Bluetooth, RGB, Output ─────────── */
+        /* ── SYS: Bluetooth, RGB, Output ─────────────────────────────── *
+         *         x=28    x=84    x=140   x=196   x=252
+         * y=28:           RGB BRI RGB EFF OUT USB  OUT BLE
+         * y=84:           OUT TOG RGB BRD RGB TOG  RGB HUI
+         * y=140:          RGB SAI BT CLR  BT0      —
+         * y=196:  —       BT7     BT8     BT9     —
+         * y=252:  ▽       BT4     BT5     BT6     reset
+         * y=308:  ▽       BT1     BT2     BT3     boot
+         * y=364:          [g]     [g]     [g]
+         */
         sys_layer {
             bindings = <
-            &trans        &rgb_ug RGB_EFF &out OUT_USB  &out OUT_BLE     &out OUT_TOG
-            &trans        &rgb_ug RGB_TOG &rgb_ug RGB_HUI &rgb_ug RGB_SAI &bt BT_CLR
-            &trans        &bt BT_SEL 7  &bt BT_SEL 8   &bt BT_SEL 9     &none
-            &none         &bt BT_SEL 4  &bt BT_SEL 5   &bt BT_SEL 6     &none
-            &trans        &bt BT_SEL 1  &bt BT_SEL 2   &bt BT_SEL 3     &sys_reset
-            &trans        &bt BT_SEL 0  &none          &none             &bootloader
+            &rgb_ug RGB_BRI &rgb_ug RGB_EFF &out OUT_USB   &out OUT_BLE     &out OUT_TOG
+            &rgb_ug RGB_BRD &rgb_ug RGB_TOG &rgb_ug RGB_HUI &rgb_ug RGB_SAI &bt BT_CLR
+            &bt BT_SEL 0  &none             &none          &bt BT_SEL 7     &bt BT_SEL 8
+            &bt BT_SEL 9  &none             &trans         &bt BT_SEL 4     &bt BT_SEL 5
+            &bt BT_SEL 6  &sys_reset        &trans         &bt BT_SEL 1     &bt BT_SEL 2
+            &bt BT_SEL 3  &bootloader       &none          &none            &none
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN &inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
