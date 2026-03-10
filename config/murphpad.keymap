@@ -99,7 +99,7 @@
             &trans        &kp HOME      &kp UP         &kp END          &kp PG_UP
             &trans        &kp LEFT      &kp DOWN       &kp RIGHT        &kp PG_DN
             &trans        &kp INS       &kp DEL        &kp PSCRN        &kp ENTER
-            &trans        &kp CAPS      &none          &kp NUM_LOCKING  &trans
+            &trans        &kp CAPS      &none          &kp KP_NUM  &trans
             >;
             sensor-bindings = <&inc_dec_kp C_BRI_UP C_BRI_DN &inc_dec_kp RIGHT LEFT>;
         };
