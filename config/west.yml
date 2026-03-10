@@ -34,18 +34,25 @@ manifest:
       import: app/west.yml
 
     # ZMK modules
+    # All modules pinned to main — v0.3 tags predate ZMK v0.4 API changes
     - name: zmk-adaptive-key
       path: modules/zmk/adaptive-key
+      revision: main
     - name: zmk-auto-layer
       path: modules/zmk/auto-layer
+      revision: main
     - name: zmk-helpers
       path: modules/zmk/helpers
+      revision: main
     - name: zmk-leader-key
       path: modules/zmk/leader-key
+      revision: main
     - name: zmk-tri-state
       path: modules/zmk/tri-state
+      revision: main
     - name: zmk-unicode
       path: modules/zmk/unicode
+      revision: main
 
     # Only source necessary Zephyr modules. Remove this entire section to restore
     # the default (needed for less common hardware).
