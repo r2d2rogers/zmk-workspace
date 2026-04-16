@@ -33,23 +33,25 @@ _parse_combos:
         echo "Setting MAX_KEYS_PER_COMBO to $count"
     fi
 
+build_matrix := "build.yaml"
+
 # parse build.yaml and filter targets by expression
-_parse_targets $expr:
+_parse_targets $expr: _check_yq_version
     #!/usr/bin/env bash
-    attrs="[.board, .shield, .snippet]"
+    attrs="[.board, .shield, .snippet, .\"artifact-name\", .\"cmake-args\"]"
     filter="(($attrs | map(. // [.]) | combinations), ((.include // {})[] | $attrs)) | join(\",\")"
-    echo "$(yq -r "$filter" build.yaml | grep -v "^," | grep -i "${expr/#all/.*}")"
+    echo "$(yq -r "$filter" {{build_matrix}} | grep -v "^," | grep -i "${expr/#all/.*}")"
 
 # build firmware for single board & shield combination
-_build_single $board $shield $snippet *west_args:
+_build_single $board $shield $snippet $artifact cmake_args *west_args:
     #!/usr/bin/env bash
     set -euo pipefail
-    artifact="${shield:+${shield// /+}-}${board}"
+    artifact="${artifact:-${shield:+${shield// /+}-}${board//\//_}}"
     build_dir="{{ build / '$artifact' }}"
 
     echo "Building firmware for $artifact..."
     west build -s zmk/app -d "$build_dir" -b $board {{ west_args }} ${snippet:+-S "$snippet"} -- \
-        -DZMK_CONFIG="{{ config }}" ${shield:+-DSHIELD="$shield"}
+        -DZMK_CONFIG="{{ config }}" ${shield:+-DSHIELD="$shield"} {{ cmake_args }}
 
     # Sanitize artifact name — hwm v2 board qualifiers (nice_nano//zmk) embed
     # slashes that turn the cp destination into a nonexistent subdir.
@@ -64,11 +66,11 @@ _build_single $board $shield $snippet *west_args:
 build expr *west_args: _parse_combos
     #!/usr/bin/env bash
     set -euo pipefail
-    targets=$(just _parse_targets {{ expr }})
+    targets=$(just build_matrix={{build_matrix}} _parse_targets {{ expr }})
 
     [[ -z $targets ]] && echo "No matching targets found. Aborting..." >&2 && exit 1
-    echo "$targets" | while IFS=, read -r board shield snippet; do
-        just _build_single "$board" "$shield" "$snippet" {{ west_args }}
+    echo "$targets" | while IFS=, read -r board shield snippet artifact cmake_args; do
+        just _build_single "$board" "$shield" "$snippet" "$artifact" "$cmake_args" {{ west_args }}
     done
 
 # clear build cache and artifacts
@@ -84,7 +86,7 @@ clean-nix:
     nix-collect-garbage --delete-old
 
 # parse & plot keymap
-draw:
+draw: _check_yq_version
     #!/usr/bin/env bash
     set -euo pipefail
     keymap -c "{{ draw }}/config.yaml" parse -z "{{ config }}/base.keymap" --virtual-layers Combos >"{{ draw }}/base.yaml"
@@ -99,7 +101,7 @@ init:
 
 # list build targets
 list:
-    @just _parse_targets all | sed 's/,*$//' | sort | column
+    @just build_matrix={{build_matrix}} _parse_targets all | sed 's/,*,[^,]*$//' | sort | column
 
 # update west
 update:
@@ -108,6 +110,16 @@ update:
 # upgrade zephyr-sdk and python dependencies
 upgrade-sdk:
     nix flake update --flake .
+
+# warn user if they are using golang-yq and not python-yq
+[no-exit-message]
+_check_yq_version:
+    #!/usr/bin/env bash
+    if yq --help 2>&1 | grep -qi 'eval'; then
+        echo "This script requires python-yq, but PATH contains golang-yq" >&2
+        echo "Please install python-yq or use the included nix shell" >&2
+        exit 1
+    fi
 
 [no-cd]
 test $testpath *FLAGS:
