@@ -32,6 +32,7 @@
               pkgs.dtc
               pkgs.gcc
               pkgs.ninja
+              pkgs.protobuf # protoc — required by nanopb generator (ZMK_STUDIO)
 
               pkgs.just
               pkgs.yq # Make sure yq resolves to python-yq.
@@ -49,7 +50,9 @@
             ];
 
           env = {
-            PYTHONPATH = "${zephyr.pythonEnv}/${zephyr.pythonEnv.sitePackages}";
+            # protoc-gen-nanopb (CONFIG_ZMK_STUDIO build) imports google.protobuf,
+            # which zephyr.pythonEnv doesn't ship; pull it from nixpkgs python3Packages.
+            PYTHONPATH = "${zephyr.pythonEnv}/${zephyr.pythonEnv.sitePackages}:${pkgs.python3Packages.protobuf}/${pkgs.python3.sitePackages}";
           };
 
           shellHook = ''

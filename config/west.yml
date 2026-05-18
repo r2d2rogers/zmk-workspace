@@ -81,6 +81,7 @@ manifest:
           - hal_rpi_pico
           - hal_stm32
           - mbedtls
+          - nanopb # required by ZMK_STUDIO_RPC (CONFIG_ZMK_STUDIO=y)
           - tinycrypt
 
   self:

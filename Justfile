@@ -51,10 +51,13 @@ _build_single $board $shield $snippet *west_args:
     west build -s zmk/app -d "$build_dir" -b $board {{ west_args }} ${snippet:+-S "$snippet"} -- \
         -DZMK_CONFIG="{{ config }}" ${shield:+-DSHIELD="$shield"}
 
+    # Sanitize artifact name — hwm v2 board qualifiers (nice_nano//zmk) embed
+    # slashes that turn the cp destination into a nonexistent subdir.
+    safe_artifact="${artifact//\//_}"
     if [[ -f "$build_dir/zephyr/zmk.uf2" ]]; then
-        mkdir -p "{{ out }}" && cp "$build_dir/zephyr/zmk.uf2" "{{ out }}/$artifact.uf2"
+        mkdir -p "{{ out }}" && cp "$build_dir/zephyr/zmk.uf2" "{{ out }}/$safe_artifact.uf2"
     else
-        mkdir -p "{{ out }}" && cp "$build_dir/zephyr/zmk.bin" "{{ out }}/$artifact.bin"
+        mkdir -p "{{ out }}" && cp "$build_dir/zephyr/zmk.bin" "{{ out }}/$safe_artifact.bin"
     fi
 
 # build firmware for matching targets
