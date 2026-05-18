@@ -26,6 +26,10 @@ manifest:
       url-base: https://github.com/urob
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
+    - name: zzeneg # Raw HID transport module (keypeek dependency)
+      url-base: https://github.com/zzeneg
+    - name: srwi # KeyPeek layer-notify module
+      url-base: https://github.com/srwi
 
   projects:
     - name: zmk
@@ -53,6 +57,16 @@ manifest:
     - name: zmk-unicode
       path: modules/zmk/unicode
       revision: main
+
+    # KeyPeek — live on-screen layer overlay (srwi/keypeek). Requires zzeneg's
+    # raw-HID transport + srwi's layer-notify hook. Both pinned to main/master
+    # since neither has versioned releases.
+    - name: zmk-raw-hid
+      remote: zzeneg
+      revision: main
+    - name: zmk-keypeek-layer-notifier
+      remote: srwi
+      revision: master
 
     # Only source necessary Zephyr modules. Remove this entire section to restore
     # the default (needed for less common hardware).
