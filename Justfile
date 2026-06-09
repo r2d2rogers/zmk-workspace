@@ -62,6 +62,17 @@ _build_single $board $shield $snippet $artifact cmake_args *west_args:
         mkdir -p "{{ out }}" && cp "$build_dir/zephyr/zmk.bin" "{{ out }}/$safe_artifact.bin"
     fi
 
+# flash firmware for single board & shield combination
+# only needed for boards which do not support UF2
+_flash_single $board $shield $artifact:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    artifact="${artifact:-${shield:+${shield// /+}-}${board//\//_}}"
+    build_dir="{{ build / '$artifact' }}"
+
+    echo "Flashing firmware for $artifact..."
+    west flash -d "$build_dir"
+
 # build firmware for matching targets
 build expr *west_args: _parse_combos
     #!/usr/bin/env bash
@@ -92,6 +103,17 @@ draw: _check_yq_version
     keymap -c "{{ draw }}/config.yaml" parse -z "{{ config }}/base.keymap" --virtual-layers Combos >"{{ draw }}/base.yaml"
     yq -Yi '.combos.[].l = ["Combos"]' "{{ draw }}/base.yaml"
     keymap -c "{{ draw }}/config.yaml" draw "{{ draw }}/base.yaml" -k "ferris/sweep" >"{{ draw }}/base.svg"
+
+# flash firmware for matching targets
+flash expr: (build expr)
+    #!/usr/bin/env bash
+    set -euo pipefail
+    targets=$(just build_matrix={{build_matrix}} _parse_targets {{ expr }})
+
+    [[ -z $targets ]] && echo "No matching targets found. Aborting..." >&2 && exit 1
+    echo "$targets" | while IFS=, read -r board shield snippet artifact cmake_args; do
+        just _flash_single "$board" "$shield" "$artifact"
+    done
 
 # initialize west
 init:
