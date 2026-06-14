@@ -1,0 +1,144 @@
+/*
+ * ZMK keymap — Back-of-phone split, S24 Ultra
+ * 5 cols/hand (index has 2 cols) x 3 rows + 1 thumb = 32 keys.
+ * Plus per-side: clickable scroll wheel (encoder) + analog thumbstick.
+ *
+ * Layers:
+ *   0 BASE    letters + homerow mods; thumbs = space/bspc layer-taps
+ *   1 SYM     symbols / nav
+ *   2 NUM     numbers / function / bluetooth
+ *   3 MOUSE   sticks = mouse cursor; wheels = scroll; thumb = click
+ *   4 SCROLL  sticks = scroll (both axes); wheels = scroll
+ *   5 GAMEPAD sticks = HID joystick axes (via zmk-hid-io); keys = buttons
+ *
+ * Pointer layers are reached from a small "nav/ptr" cluster. Sticks emit
+ * mouse REL_X/REL_Y by default (set in the overlay); the input-processors
+ * below remap those to scroll / gamepad when the relevant layer is on.
+ */
+
+#include <behaviors.dtsi>
+#include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/bt.h>
+#include <dt-bindings/zmk/pointing.h>
+#include <input/processors.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#define BASE    0
+#define SYM     1
+#define NUM     2
+#define MOUSE   3
+#define SCROLL  4
+#define GAMEPAD 5
+
+/ {
+    behaviors {
+        hm: homerow_mods {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <200>;
+            quick-tap-ms = <150>;
+            flavor = "tap-preferred";
+            bindings = <&kp>, <&kp>;
+        };
+    };
+
+    /*
+     * Input processors gate stick behavior by layer. Attach overrides to
+     * the listeners declared in the overlays. Default (no override) =
+     * mouse move, since the overlay emits REL_X/REL_Y.
+     *
+     * KNOWN ISSUE (zmk #2967): on some ZMK revisions the `layers` filter
+     * on input-listener children leaks (a scroll mapper can stay active
+     * off-layer). If you hit that, pin a ZMK rev past the fix, or drive
+     * scroll via a dedicated &msc behavior on the SCROLL layer instead.
+     *
+     * GAMEPAD mode: zmk-hid-io reads the same REL stream and emits HID
+     * joystick axes on its own interface — no input-processor needed here;
+     * enabling the GAMEPAD layer + CONFIG_ZMK_HID_IO_JOYSTICK is enough.
+     */
+    anin_l_listener {
+        scroll_l {
+            layers = <SCROLL>;
+            input-processors = <&zip_xy_to_scroll_mapper>;
+        };
+    };
+    anin_r_listener {
+        scroll_r {
+            layers = <SCROLL>;
+            input-processors = <&zip_xy_to_scroll_mapper>;
+        };
+    };
+
+    keymap {
+        compatible = "zmk,keymap";
+
+        base {
+            display-name = "BASE";
+            bindings = <
+    &kp Q  &kp W  &kp E  &kp R  &kp T      &kp Y  &kp U  &kp I  &kp O  &kp P
+ &hm LGUI A &hm LALT S &hm LCTRL D &hm LSHFT F &kp G   &kp H &hm RSHFT J &hm RCTRL K &hm RALT L &hm RGUI SEMI
+    &kp Z  &kp X  &kp C  &kp V  &kp B      &kp N  &kp M  &kp COMMA &kp DOT &kp FSLH
+            &lt SYM SPACE                  &lt NUM BSPC
+            >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;  // wheels = volume on base
+        };
+
+        sym {
+            display-name = "SYM";
+            bindings = <
+    &kp EXCL  &kp AT   &kp HASH  &kp DLLR  &kp PRCNT   &kp CARET &kp AMPS  &kp STAR  &kp LPAR  &kp RPAR
+    &kp TAB   &kp ESC  &kp MINUS &kp EQUAL &kp UNDER   &kp LEFT  &kp DOWN  &kp UP    &kp RIGHT &kp RET
+    &kp GRAVE &kp BSLH &kp LBKT  &kp RBKT  &kp PLUS    &kp HOME  &kp PG_DN &kp PG_UP &kp END   &kp DEL
+            &trans                         &mo MOUSE
+            >;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;        // wheels = page scroll
+        };
+
+        num {
+            display-name = "NUM";
+            bindings = <
+    &kp N1 &kp N2 &kp N3 &kp N4 &kp N5         &kp N6 &kp N7 &kp N8 &kp N9 &kp N0
+    &kp F1 &kp F2 &kp F3 &kp F4 &kp F5         &kp F6 &kp F7 &kp F8 &kp F9 &kp F10
+    &bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3   &kp F11 &kp F12 &mo GAMEPAD &mo SCROLL &trans
+            &mo MOUSE                          &trans
+            >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
+        };
+
+        mouse {
+            display-name = "MOUSE";
+            // sticks = cursor (default REL from overlay). keys = clicks/btns
+            bindings = <
+    &trans &trans &trans &trans &trans       &trans &mkp MB4 &mkp MB5 &trans &trans
+    &trans &trans &trans &trans &trans       &trans &mkp LCLK &mkp MCLK &mkp RCLK &trans
+    &trans &trans &trans &trans &trans       &trans &trans &trans &trans &trans
+            &mkp LCLK                         &mkp RCLK
+            >;
+            sensor-bindings = <&inc_dec_kp SCRL_UP SCRL_DOWN>;  // wheels = mouse scroll
+        };
+
+        scroll {
+            display-name = "SCROLL";
+            // sticks remapped to scroll by input-processor above
+            bindings = <
+    &trans &trans &trans &trans &trans       &trans &trans &trans &trans &trans
+    &trans &trans &trans &trans &trans       &trans &trans &trans &trans &trans
+    &trans &trans &trans &trans &trans       &trans &trans &trans &trans &trans
+            &trans                            &trans
+            >;
+            sensor-bindings = <&inc_dec_kp SCRL_UP SCRL_DOWN>;
+        };
+
+        gamepad {
+            display-name = "GAMEPAD";
+            // sticks = HID joystick axes via zmk-hid-io.
+            // keys become face/shoulder buttons (map as you like).
+            bindings = <
+    &kp N1 &kp N2 &kp N3 &kp N4 &kp N5       &kp N6 &kp N7 &kp N8 &kp N9 &kp N0
+    &kp A  &kp B  &kp X  &kp Y  &kp L1       &kp R1 &kp UP &kp DOWN &kp LEFT &kp RIGHT
+    &kp LSHFT &kp LCTRL &kp LALT &kp SPACE &kp ENTER   &kp ESC &kp TAB &kp BSPC &kp DEL &kp GRAVE
+            &kp RET                            &kp SPACE
+            >;
+        };
+    };
+};

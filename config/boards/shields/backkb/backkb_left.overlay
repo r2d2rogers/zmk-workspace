@@ -1,0 +1,67 @@
+#include "backkb.dtsi"
+
+&kscan0 {
+    /* 4 rows x 5 cols matrix. Diodes col->row (1N4148, band toward row). */
+    row-gpios
+        = <&pro_micro 4  (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
+        , <&pro_micro 5  (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
+        , <&pro_micro 6  (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
+        , <&pro_micro 7  (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
+        ;
+    col-gpios
+        = <&pro_micro 8  GPIO_ACTIVE_HIGH>
+        , <&pro_micro 9  GPIO_ACTIVE_HIGH>
+        , <&pro_micro 16 GPIO_ACTIVE_HIGH>
+        , <&pro_micro 10 GPIO_ACTIVE_HIGH>
+        , <&pro_micro 14 GPIO_ACTIVE_HIGH>
+        ;
+};
+
+/* Scroll wheel encoder — A/B pins, side edge under left thumb tip */
+&wheel {
+    status = "okay";
+    a-gpios = <&pro_micro 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+    b-gpios = <&pro_micro 18 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+};
+
+/* Analog thumbstick (PSP-flat, dual-pot). nRF52840 ADC channels.
+ * See badjeff ain-map.png: AIN_ ch numbers map to specific P0.xx pins.
+ * X on AIN2 (P0.04), Y on AIN3 (P0.05) here — adjust to your wiring. */
+&adc { status = "okay"; };
+
+/ {
+    anin_l: analog_input_left {
+        compatible = "zmk,analog-input";
+        sampling-hz = <100>;
+        x-ch {
+            io-channels = <&adc 2>;
+            mv-mid = <1630>;
+            mv-min-max = <1600>;
+            mv-deadzone = <12>;
+            scale-multiplier = <1>;
+            scale-divisor = <70>;
+            invert;
+            evt-type = <INPUT_EV_REL>;
+            input-code = <INPUT_REL_X>;
+        };
+        y-ch {
+            io-channels = <&adc 3>;
+            mv-mid = <1630>;
+            mv-min-max = <1600>;
+            mv-deadzone = <12>;
+            scale-multiplier = <1>;
+            scale-divisor = <70>;
+            invert;
+            evt-type = <INPUT_EV_REL>;
+            input-code = <INPUT_REL_Y>;
+        };
+    };
+
+    /* Input listener: routes the left stick into the input subsystem.
+     * Default REL_X/REL_Y = mouse move. Layer processors below remap to
+     * scroll or gamepad when those layers are active. */
+    anin_l_listener: anin_l_listener {
+        compatible = "zmk,input-listener";
+        device = <&anin_l>;
+    };
+};

@@ -30,6 +30,8 @@ manifest:
       url-base: https://github.com/zzeneg
     - name: srwi # KeyPeek layer-notify module
       url-base: https://github.com/srwi
+    - name: badjeff # backkb shield: analog thumbstick driver + hid-io
+      url-base: https://github.com/badjeff
 
   projects:
     - name: zmk
@@ -67,6 +69,17 @@ manifest:
     - name: zmk-keypeek-layer-notifier
       remote: srwi
       revision: master
+
+    # backkb shield modules (badjeff). Analog thumbstick driver is the
+    # main one; hid-io adds a second HID device for the GAMEPAD layer.
+    # If analog reads stall after ~1 minute, apply
+    # patches/zmk-nrf52840-adc-oversampling.md against the pinned ZMK rev.
+    - name: zmk-analog-input-driver
+      remote: badjeff
+      revision: main
+    - name: zmk-hid-io
+      remote: badjeff
+      revision: main
 
     # Only source necessary Zephyr modules. Remove this entire section to restore
     # the default (needed for less common hardware).

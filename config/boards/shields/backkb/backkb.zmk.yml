@@ -1,0 +1,11 @@
+file_format: "1"
+id: backkb
+name: Back-of-Phone Split (S24 Ultra)
+type: shield
+url: https://github.com/r2d2rogers/zmk-workspace
+requires: [pro_micro]
+features:
+  - keys
+siblings:
+  - backkb_left
+  - backkb_right

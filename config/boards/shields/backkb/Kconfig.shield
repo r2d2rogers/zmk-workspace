@@ -1,0 +1,12 @@
+if SHIELD_BACKKB_LEFT
+
+config ZMK_KEYBOARD_NAME
+    default "backkb"
+
+endif
+
+config SHIELD_BACKKB_LEFT
+    def_bool $(shields_list_contains,backkb_left)
+
+config SHIELD_BACKKB_RIGHT
+    def_bool $(shields_list_contains,backkb_right)
