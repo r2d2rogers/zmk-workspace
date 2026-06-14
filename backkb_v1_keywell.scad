@@ -74,8 +74,16 @@ hand_pitch_y  = 4;        // rotate around Y (tips top of column out)
 cols_per_hand = 5;        // pinky, ring, middle, idx_outer, idx_inner
 rows_per_col  = 3;        // top / home / bottom
 
-// Column arc — rotation between successive rows around column pivot.
-column_curvature = 16;    // deg
+// Column arc — concave (pivot ABOVE home key). Home sits at the bottom
+// of the bowl; both the fingertip-extended row (top) and the palm-tucked
+// row (bottom) rise to meet the finger at its respective curl angle.
+// This is the canonical dactyl-manuform shape — was inverted in the
+// previous scaffold.
+column_curvature_top    = 16;   // deg between home and top row (fingertip)
+// Squeezebox-style trigger-pull asymmetry — the palm-side row tucks
+// tighter than the fingertip-side because a curled finger pulls more
+// strongly than it extends.
+column_curvature_bottom = 24;   // deg between home and bottom row (palm)
 
 // Row arc — splay between adjacent columns (around Z, in-plane fan).
 // Small here because columns ride the phone's narrow 79mm short axis.
@@ -101,9 +109,11 @@ column_z_offset  = [-2, -1,  0, -1, -3 ];
 // Row pitch (arc-length between rows along column arc).
 row_spacing      = 17;
 
-// Effective column-arc radius (mm). Derived from arc-length so spacing
-// stays honest as you change column_curvature.
-row_radius       = row_spacing / (column_curvature * 3.14159265 / 180);
+// Effective column-arc radius (mm). Derived from arc-length of the top
+// arc so spacing stays honest as you change column_curvature_top. The
+// trigger-pull bottom arc shares the same radius but uses a larger
+// angle (column_curvature_bottom), giving a tighter tuck near the palm.
+row_radius       = row_spacing / (column_curvature_top * 3.14159265 / 180);
 
 // ---------------------------------------------------------------------
 //  SWITCH + PLATE
@@ -149,9 +159,12 @@ module key_preview() {
 
 // Place one key at (col, row) in the hand-local frame.
 //   col 0..4 (pinky → index_inner), row 0..2 (top → bottom)
-// Columns step along Y; rows curl in the X-Z plane around a pivot
-// row_radius below the home key. This is the standard dactyl-manuform
-// column placement, rotated 90° from the v0 scaffold.
+// Different columns step along Y (5 fingers across the phone short
+// axis). Within a column, the 3 rows arc along X (palm at +X for right
+// hand, fingertip toward -X) — the column itself extends down the
+// phone long axis. Curl is concave: pivot ABOVE home, so top + bottom
+// rows rise above home (the bowl the finger reaches into). Bottom row
+// uses a larger curl angle for the Squeezebox trigger-pull asymmetry.
 module place_key(col, row) {
   y_pos   = column_y_pos[col];
   x_stag  = column_x_stagger[col];
@@ -159,11 +172,17 @@ module place_key(col, row) {
   row_rel = row - 1;        // 0=home, -1=top (fingertip), +1=bottom (palm)
   col_rel = col - 2;        // splay center = middle column
 
+  // Asymmetric curl: top arc uses column_curvature_top; bottom arc
+  // uses column_curvature_bottom (larger, trigger-pull).
+  curl_deg = row_rel == 0 ? 0
+           : row_rel <  0 ? -column_curvature_top    * row_rel
+                          : -column_curvature_bottom * row_rel;
+
   translate([x_stag, y_pos, z_off])
     rotate([0, 0, row_curvature * col_rel])    // splay (in-plane fan)
-      translate([0, 0, -row_radius])
-        rotate([0, column_curvature * row_rel, 0])   // column curl
-          translate([0, 0, row_radius])
+      translate([0, 0, row_radius])            // pivot ABOVE home key
+        rotate([0, curl_deg, 0])               // concave column curl
+          translate([0, 0, -row_radius])
             children();
 }
 
