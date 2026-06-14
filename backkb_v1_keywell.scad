@@ -62,7 +62,11 @@ cam_y         =  phone_wid/2 - 6 - cam_h/2;
 // (Left-hand is generated via mirror() and inherits this offset.)
 hand_anchor_x = 55;       // distance from phone center toward +X palm
 hand_anchor_y =  0;       // centered in Y by default; nudge per finger
-hand_anchor_z = phone_thk + 6;   // float keywell above phone back
+// Home Z is the keywell's lowest point. Dropped to 2 mm above phone
+// back so the dock-mode rig fits a pocket-friendly half. With
+// case_back_thk=1.5, leaves ~0.5 mm clearance from the phone-side
+// case wall to the home plate.
+hand_anchor_z = phone_thk + 2;
 
 // Whole-hand tilt — fine adjustments after the per-column block is set
 hand_tent_x   = 0;        // rotate around X (lifts pinky side or index)
@@ -84,7 +88,10 @@ rows_per_col  = 3;        // top / home / bottom
 // pivot the bottom row through a SHORT-radius arc so it ends up
 // almost perpendicular to the phone back — a real trigger-pull face
 // rather than a slightly-curved row.
-column_curvature_top    = 16;   // deg between home and top (fingertip)
+column_curvature_top    = 10;   // deg between home and top (fingertip).
+                                // Flattened from 16° — gives up some
+                                // dactyl bowl-feel but saves ~1 mm Z
+                                // for the pocket-depth budget.
 column_curvature_bottom = 80;   // deg between home and bottom (palm).
                                 // 80 ≈ nearly perpendicular; the row
                                 // face points outward toward the palm,
@@ -122,7 +129,9 @@ row_radius_top    = row_spacing / (column_curvature_top * 3.14159265 / 180);
 // trigger-pull face stays close to home in X and Z while sweeping
 // through the large column_curvature_bottom angle. Think of it as the
 // rotation radius of the very last finger joint, not the whole finger.
-row_radius_bottom = 12;
+// Tightened from 12 to 8 mm to pull the bottom-row cap-top down into
+// the pocket-depth budget.
+row_radius_bottom = 8;
 
 // ---------------------------------------------------------------------
 //  SWITCH + PLATE
@@ -141,6 +150,65 @@ thumb_anchor  = [ 18, -36, -6 ];   // (x palm-side, y inboard, z down)
 thumb_yaw_z   = -14;
 thumb_pitch_y = 8;
 thumb_spacing = 19;     // between the 2 thumb keys, along the cluster axis
+
+// ---------------------------------------------------------------------
+//  HALF-CASE SHELL — magnetic split-dock structure
+// ---------------------------------------------------------------------
+// Each half is a small case that:
+//   (a) IN USE: docks magnetically to one phone short end, keywell
+//       facing outward (+Z) so fingers can reach the keys.
+//   (b) IN TRANSIT: detaches from phone and snaps face-to-face to the
+//       other half. The two bowls mate at their rims, sandwiching
+//       both keysets in a sealed cavity for pocket transport.
+//
+// Two magnet groups per half:
+//   - DOCK magnets on the back panel (phone-facing) — grip phone
+//     (or a thin steel back-plate / phone case insert).
+//   - MATE magnets on the bowl RIM (other-half-facing) — snap halves
+//     together face-to-face for transit, with reversed polarity vs
+//     dock so the unit can't accidentally re-dock backwards.
+//
+// All shell geometry below is preview-grade only — real wall
+// thicknesses + pocket sizes + retention features land in the
+// shell-pass after geometry tune is locked.
+
+case_back_thk    = 1.5;     // case wall against phone back (mm)
+case_wall_thk    = 2.0;     // side walls of the half-shell
+case_rim_thk     = 2.5;     // bowl-rim ridge thickness (mate face)
+
+// Half-shell footprint (right hand, hand-local frame). Slightly larger
+// than the keywell bounding so walls clear the keys.
+shell_x_min      = -22;     // toward phone center (fingertip side)
+shell_x_max      =  38;     // toward palm side
+shell_y_min      = -45;     // bottom edge (index side)
+shell_y_max      =  40;     // top edge (pinky side)
+shell_z_top      =  22;     // outer top of the half-shell (above hand
+                            // anchor) — pocket budget target.
+
+// Magnets — 6 x 2 mm neodymium discs (small, cheap, strong enough for
+// dock + mate retention at this scale).
+magnet_d         = 6;
+magnet_h         = 2;
+magnet_pocket_d  = 6.2;     // slight clearance for press-fit + glue
+magnet_pocket_h  = 2.1;
+
+// Dock magnets — 4 along the phone-facing back panel of each half.
+// Positions are in hand-local XY at z = back-panel mid-plane.
+dock_magnets = [
+  [ 28,  30, 0 ],  // outboard-top
+  [ 28, -35, 0 ],  // outboard-bottom
+  [ -10,  30, 0 ], // inboard-top
+  [ -10, -35, 0 ], // inboard-bottom
+];
+
+// Mate magnets — 4 around the bowl rim, on the half-to-half face.
+// Positions are along the keywell-rim trace, z at shell_z_top.
+mate_magnets = [
+  [ 30,  35, 0 ],
+  [ 30, -40, 0 ],
+  [ -18, 35, 0 ],
+  [ -18,-40, 0 ],
+];
 
 // ---------------------------------------------------------------------
 //  PALM KEY — 1 per side, in hand-local frame
@@ -229,6 +297,41 @@ module palm_key_local() {
       key_preview();
 }
 
+// Half-shell sketch — outer case wall around the keywell with marked
+// magnet pockets on (a) the phone-facing back, (b) the half-to-half
+// mating rim. Preview-grade: real fillets/pocket retention added in
+// the shell-pass.
+module half_shell_local() {
+  // Outer shell — boxy footprint, hollow inside.
+  difference() {
+    // Outer hull
+    color([0.7, 0.7, 0.75, 0.45])
+      translate([(shell_x_min + shell_x_max)/2,
+                 (shell_y_min + shell_y_max)/2,
+                 shell_z_top/2])
+        cube([shell_x_max - shell_x_min,
+              shell_y_max - shell_y_min,
+              shell_z_top], center=true);
+    // Inner cavity (subtract a slightly smaller box, leaving walls)
+    translate([(shell_x_min + shell_x_max)/2,
+               (shell_y_min + shell_y_max)/2,
+               (case_back_thk + shell_z_top)/2 + 0.01])
+      cube([shell_x_max - shell_x_min - 2*case_wall_thk,
+            shell_y_max - shell_y_min - 2*case_wall_thk,
+            shell_z_top - case_back_thk], center=true);
+  }
+  // Dock magnet pockets on the back panel (z ≈ 0..magnet_pocket_h)
+  color([0.9, 0.3, 0.3])
+    for (m = dock_magnets)
+      translate([m[0], m[1], magnet_pocket_h/2])
+        cylinder(h = magnet_pocket_h, d = magnet_pocket_d, center = true);
+  // Mate magnet pockets on the bowl rim (z ≈ shell_z_top - magnet_pocket_h)
+  color([0.3, 0.6, 0.9])
+    for (m = mate_magnets)
+      translate([m[0], m[1], shell_z_top - magnet_pocket_h/2])
+        cylinder(h = magnet_pocket_h, d = magnet_pocket_d, center = true);
+}
+
 // Apply hand anchor + whole-hand tilt around the wrist, then render
 // finger keywell + thumb + palm in the hand-local frame.
 module hand_right() {
@@ -240,9 +343,20 @@ module hand_right() {
     }
 }
 
+// Right-hand half-shell anchored to phone (in-use position).
+module hand_right_shell() {
+  translate([hand_anchor_x, hand_anchor_y, phone_thk])
+    half_shell_local();
+}
+
 // Mirror right hand across the YZ plane.
 module hand_left() {
   mirror([1, 0, 0]) hand_right();
+}
+
+// Left-hand half-shell.
+module hand_left_shell() {
+  mirror([1, 0, 0]) hand_right_shell();
 }
 
 // Phone body — rounded-corner hull + camera bump silhouette.
@@ -287,18 +401,44 @@ module phone_body() {
 // once the per-column parameters are tuned to your fingertip rest.
 
 // ---------------------------------------------------------------------
-//  RENDER TARGETS — comment / uncomment to taste
+//  RENDER TARGETS — switch via render_mode (override on CLI with -D)
 // ---------------------------------------------------------------------
+//
+// Modes:
+//   "in_use"   — phone + both halves docked (default; ergonomic review)
+//   "transit"  — two halves snapped face-to-face (pocket view)
+//   "right"    — single right half (print target candidate)
+//
+// CLI override: openscad -D 'render_mode="transit"' -o out.stl file.scad
 
-// FULL RIG — phone + both hand-halves (default for shape review)
-phone_body();
-hand_right();
-hand_left();
+render_mode = "in_use";
 
-// Single half — uncomment if you want to inspect the right hand alone
-// phone_body();
-// hand_right();
+// Gap between the two rim faces when mated face-to-face for transit.
+transit_mate_gap = 2;
 
-// Print target (right half only) — comment phone_body() above; render
-// F6 to STL. Not meaningful until keywell shell + switch cutouts land.
-// hand_right();
+if (render_mode == "in_use") {
+  phone_body();
+  hand_right_shell();
+  hand_right();
+  hand_left_shell();
+  hand_left();
+} else if (render_mode == "transit") {
+  // Right half: removed from its in-use hand_anchor position so it
+  // sits centered at the world origin (the transit unit has no phone).
+  translate([-hand_anchor_x, 0, -phone_thk]) {
+    hand_right_shell();
+    hand_right();
+  }
+  // Left half: same recentering, then flipped 180° around X so its
+  // bowl opens DOWN, then lifted in Z to mate at the rim of the
+  // right half.
+  translate([0, 0, 2*shell_z_top + transit_mate_gap])
+    rotate([180, 0, 0])
+      translate([hand_anchor_x, 0, -phone_thk]) {
+        hand_left_shell();
+        hand_left();
+      }
+} else if (render_mode == "right") {
+  hand_right_shell();
+  hand_right();
+}
