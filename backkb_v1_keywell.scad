@@ -208,7 +208,23 @@ shell_y_min      = -phone_wid/2 - case_wall_thk;
 shell_y_max      =  phone_wid/2 + case_wall_thk;
 // Z: from phone-back (z=0 in cradle frame) up by back_thk + keywell.
 shell_z_back     = phone_thk;             // top of cased-phone back
-shell_z_top      = shell_z_back + case_back_thk + 22;  // keywell zone
+// 18 mm of keywell zone covers the bottom-row trigger cap (top at
+// ~30.8 mm in cradle frame) with 2 mm clearance. Was 22 (placeholder).
+shell_z_top      = shell_z_back + case_back_thk + 18;  // ~33 mm
+
+// L-PROFILE — each half is asymmetric in side view:
+//   Tall zone (outboard, contains keywell tower): z up to shell_z_top
+//   Short zone (inboard, just back panel + low shell): z up to shell_z_short_top
+// In transit, one half is X-shifted by transit_x_shift so its tall zone
+// overlaps the OTHER half's short zone — towers sit at opposite X
+// extremes, no tower-on-tower collision, transit Z stays low.
+shell_x_step      = 35;                   // X boundary between short and
+                                          // tall zones (just inboard of
+                                          // the keywell's leftmost cap).
+shell_z_short_top = shell_z_back + case_back_thk + 2;   // ~17 mm (low)
+transit_x_shift   = (shell_x_step - shell_x_seam) * 2;  // 64 mm
+                                          // shifts left half's tall zone
+                                          // over right half's short zone.
 
 // Magnets — 6 x 2 mm neodymium discs.
 magnet_d         = 6;
@@ -332,31 +348,52 @@ module palm_key_local() {
 // cradle's back panel sits at z = phone_thk .. phone_thk+case_back_thk.
 // The keywell mounts above that.
 module half_shell_local() {
-  // Outer cradle hull — covers half the cased-phone footprint plus the
-  // outboard short-end wrap.
+  // Outer cradle hull — L-profile.
+  //   Short zone (x_seam .. x_step): low shell, height shell_z_short_top.
+  //   Tall  zone (x_step .. x_outboard): full keywell tower, shell_z_top.
+  // The two zones share the same back-panel cradle around the phone;
+  // they differ only in how high the shell wall rises.
   difference() {
-    // Outer hull
+    // Tall zone — outboard, contains keywell tower.
     color([0.7, 0.7, 0.75, 0.45])
-      translate([(shell_x_seam + shell_x_outboard)/2,
-                 (shell_y_min   + shell_y_max)/2,
+      translate([(shell_x_step + shell_x_outboard)/2,
+                 (shell_y_min  + shell_y_max)/2,
                  shell_z_top / 2])
-        cube([shell_x_outboard - shell_x_seam,
+        cube([shell_x_outboard - shell_x_step,
               shell_y_max - shell_y_min,
               shell_z_top], center = true);
-    // Subtract the cased-phone cavity (keeps a small front-bezel lip).
-    translate([(shell_x_seam + shell_x_outboard)/2,
+    // Subtract the cased-phone cavity in the tall zone.
+    translate([(shell_x_step + shell_x_outboard)/2,
                (shell_y_min + shell_y_max)/2,
                (phone_thk - cradle_lip_h) / 2])
-      cube([shell_x_outboard - shell_x_seam + 0.5,
+      cube([shell_x_outboard - shell_x_step + 0.5,
             phone_wid + 1.0,
             phone_thk - cradle_lip_h + 0.01], center = true);
     // Subtract the keywell interior above the back panel.
-    translate([(shell_x_seam + shell_x_outboard)/2,
+    translate([(shell_x_step + shell_x_outboard)/2,
                (shell_y_min + shell_y_max)/2,
                (phone_thk + case_back_thk + shell_z_top)/2 + 0.01])
-      cube([(shell_x_outboard - shell_x_seam) - 2*case_wall_thk,
-            (shell_y_max - shell_y_min)     - 2*case_wall_thk,
+      cube([(shell_x_outboard - shell_x_step) - 2*case_wall_thk,
+            (shell_y_max - shell_y_min)       - 2*case_wall_thk,
              shell_z_top - phone_thk - case_back_thk], center = true);
+  }
+
+  // Short zone — inboard, just the back panel + low shell.
+  difference() {
+    color([0.7, 0.7, 0.75, 0.45])
+      translate([(shell_x_seam + shell_x_step)/2,
+                 (shell_y_min  + shell_y_max)/2,
+                 shell_z_short_top / 2])
+        cube([shell_x_step - shell_x_seam,
+              shell_y_max - shell_y_min,
+              shell_z_short_top], center = true);
+    // Subtract the cased-phone cavity in the short zone.
+    translate([(shell_x_seam + shell_x_step)/2,
+               (shell_y_min + shell_y_max)/2,
+               (phone_thk - cradle_lip_h) / 2])
+      cube([shell_x_step - shell_x_seam + 0.5,
+            phone_wid + 1.0,
+            phone_thk - cradle_lip_h + 0.01], center = true);
   }
 
   // SEAM magnet pockets — on the inboard (-X) wall, perpendicular to X
@@ -467,18 +504,24 @@ if (render_mode == "in_use") {
   hand_left();
 } else if (render_mode == "transit") {
   // No phone; halves face-to-face, mated at the keywell rim. Both
-  // halves recentered on world origin so they overlap in XY, then
-  // left half flipped + lifted to mate at the rim plane.
-  translate([-shell_center_x, 0, 0]) {
-    hand_right_shell();
-    hand_right();
-  }
-  translate([0, 0, 2*shell_z_top + transit_mate_gap])
-    rotate([180, 0, 0])
-      translate([shell_center_x, 0, 0]) {
-        hand_left_shell();
-        hand_left();
-      }
+  // ASYMMETRIC INTERLOCK:
+  //   Right half stays at its native cradle X (3..86), tall zone at +X.
+  //   Left half is flipped 180° around X (bowls face each other) and
+  //   X-shifted by +transit_x_shift so its tall zone now overlaps right
+  //   half's SHORT zone — towers at opposite X extremes, no collision.
+  //   Z lift = shell_z_top + shell_z_short_top + transit_mate_gap.
+  //   That's enough clearance for right's tall zone (z=0..shell_z_top)
+  //   under left's short zone (which after flip+lift starts at the
+  //   lifted plane and extends down by shell_z_short_top).
+  hand_right_shell();
+  hand_right();
+  translate([transit_x_shift,
+             0,
+             shell_z_top + shell_z_short_top + transit_mate_gap])
+    rotate([180, 0, 0]) {
+      hand_left_shell();
+      hand_left();
+    }
 } else if (render_mode == "right") {
   hand_right_shell();
   hand_right();
