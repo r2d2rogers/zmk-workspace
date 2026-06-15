@@ -39,34 +39,47 @@
 $fn = 48;
 
 // ---------------------------------------------------------------------
-//  PHONE BODY — S24 Ultra reference
+//  PHONE BODY — S24 Ultra in Otterbox Commuter case (cradled object)
 // ---------------------------------------------------------------------
-phone_len     = 162.3;    // long edge
-phone_wid     = 79.0;     // short edge
-phone_thk     = 8.6;      // body thickness
-corner_r      = 6.0;      // body corner radius
+// The backkb halves don't grip the phone directly; they cradle the
+// already-cased phone. Sizes here are the OUTSIDE envelope of the
+// Commuter case, not the bare phone. Adjust if you measure your
+// case differently.
+phone_len_bare = 162.3;
+phone_wid_bare =  79.0;
+phone_thk_bare =   8.6;
 
-// Camera bump (S24U): in portrait the lenses are top-left; in landscape
-// (long edge horizontal, with the user-near edge at -Y), that's the
-// top-left back, i.e. roughly (-X, +Y) corner area.
-cam_w         = 38;       // bump footprint width  (along X)
-cam_h         = 60;       // bump footprint length (along Y)
-cam_thk       = 3.6;      // bump rise above phone back
-cam_x         = -phone_len/2 + 6 + cam_w/2;
-cam_y         =  phone_wid/2 - 6 - cam_h/2;
+// Otterbox Commuter add (per face). Commuter is the "slim" tier; rough
+// numbers from teardowns and pocket-feel measurements.
+case_add_xy   =  2.5;     // each long/short edge adds ~2.5 mm
+case_add_z    =  2.2;     // back of case adds ~2.2 mm; front lip a bit less
+
+// Cased outer dims (what the cradle wraps around).
+phone_len     = phone_len_bare + 2*case_add_xy;   // ~167.3
+phone_wid     = phone_wid_bare + 2*case_add_xy;   //  ~84.0
+phone_thk     = phone_thk_bare +   2*case_add_z;  //  ~13.0
+corner_r      =  9.0;     // Commuter has bigger corner radii than bare phone
+
+// Camera bump in landscape (visual reference; geometry-only, no cutout).
+cam_w         = 40;
+cam_h         = 62;
+cam_thk       = 3.6;
+cam_x         = -phone_len/2 + 8 + cam_w/2;
+cam_y         =  phone_wid/2 - 8 - cam_h/2;
 
 // ---------------------------------------------------------------------
 //  HAND PLACEMENT
 // ---------------------------------------------------------------------
 // Right-hand wrist anchor — wrist sits just inboard of the right palm.
-// (Left-hand is generated via mirror() and inherits this offset.)
-hand_anchor_x = 55;       // distance from phone center toward +X palm
-hand_anchor_y =  0;       // centered in Y by default; nudge per finger
-// Home Z is the keywell's lowest point. Dropped to 2 mm above phone
-// back so the dock-mode rig fits a pocket-friendly half. With
-// case_back_thk=1.5, leaves ~0.5 mm clearance from the phone-side
-// case wall to the home plate.
-hand_anchor_z = phone_thk + 2;
+// Now measured from cased-phone center toward the right short end.
+hand_anchor_x = 55;       // x of wrist (in cased-phone frame)
+hand_anchor_y =  0;
+// Home Z is the keywell's lowest point above the cradle back panel.
+// case_back_thk sits between cased-phone back and the keywell floor.
+hand_anchor_z = phone_thk + case_back_thk_placeholder();
+// Placeholder hack: case_back_thk is defined later in the file (in the
+// half-shell block) but hand_anchor_z needs it. Pin it here.
+function case_back_thk_placeholder() = 2;
 
 // Whole-hand tilt — fine adjustments after the per-column block is set
 hand_tent_x   = 0;        // rotate around X (lifts pinky side or index)
@@ -152,62 +165,77 @@ thumb_pitch_y = 8;
 thumb_spacing = 19;     // between the 2 thumb keys, along the cluster axis
 
 // ---------------------------------------------------------------------
-//  HALF-CASE SHELL — magnetic split-dock structure
+//  HALF-CASE CRADLE — wraps an Otterbox-cased phone, no case mods
 // ---------------------------------------------------------------------
-// Each half is a small case that:
-//   (a) IN USE: docks magnetically to one phone short end, keywell
-//       facing outward (+Z) so fingers can reach the keys.
-//   (b) IN TRANSIT: detaches from phone and snaps face-to-face to the
-//       other half. The two bowls mate at their rims, sandwiching
-//       both keysets in a sealed cavity for pocket transport.
+// Each half is a half-cradle around the already-cased phone:
+//   (a) IN USE: halves clip onto opposite short ends of the cased
+//       phone. Their INBOARD ends meet across the back at phone
+//       center; SEAM magnets hold them clamped around the phone.
+//       Keywell sits on the back panel facing the user (+Z).
+//   (b) IN TRANSIT: halves detach from phone, flip, mate face-to-face
+//       via RIM magnets on the keywell-bowl rim. Keys sealed inside
+//       the joined cavity for pocket transport.
 //
-// Two magnet groups per half:
-//   - DOCK magnets on the back panel (phone-facing) — grip phone
-//     (or a thin steel back-plate / phone case insert).
-//   - MATE magnets on the bowl RIM (other-half-facing) — snap halves
-//     together face-to-face for transit, with reversed polarity vs
-//     dock so the unit can't accidentally re-dock backwards.
+// Two magnet groups per half (different physical faces):
+//   - SEAM magnets on the inboard (-X) wall — clamp halves around
+//     phone in use AND maintain the cradle integrity.
+//   - RIM magnets on the keywell-bowl top (+Z) face — snap halves
+//     together face-to-face for transit (keys nested inside).
 //
-// All shell geometry below is preview-grade only — real wall
-// thicknesses + pocket sizes + retention features land in the
-// shell-pass after geometry tune is locked.
+// Cradle wrap features:
+//   - Back panel against cased phone back (case_back_thk)
+//   - Outboard short-end wrap that reaches up onto the phone front
+//     bezel by cradle_lip_h for retention
+//   - Long-edge lips that grip the phone-case sides
 
-case_back_thk    = 1.5;     // case wall against phone back (mm)
-case_wall_thk    = 2.0;     // side walls of the half-shell
-case_rim_thk     = 2.5;     // bowl-rim ridge thickness (mate face)
+case_back_thk    = 2.0;     // back wall against cased phone (mm)
+case_wall_thk    = 2.5;     // side walls of the half-shell
+case_rim_thk     = 2.5;     // bowl-rim ridge thickness
+cradle_lip_h     = 5;       // lip wrap onto phone front bezel (retention)
+cradle_long_extent = 80;    // each half reaches this far inboard from
+                            // its outboard short end. 2 × 80 = 160 mm
+                            // < phone_len 167 mm: leaves a small ~7 mm
+                            // gap at center (room for seam magnets and
+                            // a soft-feel separation strip).
 
-// Half-shell footprint (right hand, hand-local frame). Slightly larger
-// than the keywell bounding so walls clear the keys.
-shell_x_min      = -22;     // toward phone center (fingertip side)
-shell_x_max      =  38;     // toward palm side
-shell_y_min      = -45;     // bottom edge (index side)
-shell_y_max      =  40;     // top edge (pinky side)
-shell_z_top      =  22;     // outer top of the half-shell (above hand
-                            // anchor) — pocket budget target.
+// Half-shell footprint (right hand, in cased-phone frame).
+// X: from phone center (seam) to outboard short end.
+shell_x_seam     = 3;                     // half of 7 mm seam gap
+shell_x_outboard = phone_len/2 + case_wall_thk;
+shell_center_x   = (shell_x_seam + shell_x_outboard) / 2;
+// Y: full cased-phone width (with wall on both long edges).
+shell_y_min      = -phone_wid/2 - case_wall_thk;
+shell_y_max      =  phone_wid/2 + case_wall_thk;
+// Z: from phone-back (z=0 in cradle frame) up by back_thk + keywell.
+shell_z_back     = phone_thk;             // top of cased-phone back
+shell_z_top      = shell_z_back + case_back_thk + 22;  // keywell zone
 
-// Magnets — 6 x 2 mm neodymium discs (small, cheap, strong enough for
-// dock + mate retention at this scale).
+// Magnets — 6 x 2 mm neodymium discs.
 magnet_d         = 6;
 magnet_h         = 2;
-magnet_pocket_d  = 6.2;     // slight clearance for press-fit + glue
+magnet_pocket_d  = 6.2;
 magnet_pocket_h  = 2.1;
 
-// Dock magnets — 4 along the phone-facing back panel of each half.
-// Positions are in hand-local XY at z = back-panel mid-plane.
-dock_magnets = [
-  [ 28,  30, 0 ],  // outboard-top
-  [ 28, -35, 0 ],  // outboard-bottom
-  [ -10,  30, 0 ], // inboard-top
-  [ -10, -35, 0 ], // inboard-bottom
+// SEAM magnets — along the inboard (-X) wall of each half. Polarity
+// alternates per magnet so the two halves only mate in the correct
+// orientation (N-S-N-S vs S-N-S-N).
+seam_magnets = [
+  [ 0, -30, phone_thk/2 ],
+  [ 0, -10, phone_thk/2 ],
+  [ 0,  10, phone_thk/2 ],
+  [ 0,  30, phone_thk/2 ],
 ];
 
-// Mate magnets — 4 around the bowl rim, on the half-to-half face.
-// Positions are along the keywell-rim trace, z at shell_z_top.
-mate_magnets = [
-  [ 30,  35, 0 ],
-  [ 30, -40, 0 ],
-  [ -18, 35, 0 ],
-  [ -18,-40, 0 ],
+// RIM magnets — around the keywell-bowl rim on the (+Z) face. Reversed
+// polarity from SEAM magnets so a transit-mode mate can't accidentally
+// drop into in-use mode if the halves are jostled with no phone.
+rim_magnets = [
+  [ 25,  35, 0 ],
+  [ 25, -35, 0 ],
+  [ -10, 35, 0 ],
+  [ -10,-35, 0 ],
+  [ shell_x_outboard - 10,  35, 0 ],
+  [ shell_x_outboard - 10, -35, 0 ],
 ];
 
 // ---------------------------------------------------------------------
@@ -297,37 +325,50 @@ module palm_key_local() {
       key_preview();
 }
 
-// Half-shell sketch — outer case wall around the keywell with marked
-// magnet pockets on (a) the phone-facing back, (b) the half-to-half
-// mating rim. Preview-grade: real fillets/pocket retention added in
-// the shell-pass.
+// Half-cradle — wraps half the cased phone (one short end), provides
+// the keywell mount surface, and exposes both magnet sets.
+//
+// In cradle frame: the cased phone sits at z = 0 .. phone_thk. The
+// cradle's back panel sits at z = phone_thk .. phone_thk+case_back_thk.
+// The keywell mounts above that.
 module half_shell_local() {
-  // Outer shell — boxy footprint, hollow inside.
+  // Outer cradle hull — covers half the cased-phone footprint plus the
+  // outboard short-end wrap.
   difference() {
     // Outer hull
     color([0.7, 0.7, 0.75, 0.45])
-      translate([(shell_x_min + shell_x_max)/2,
-                 (shell_y_min + shell_y_max)/2,
-                 shell_z_top/2])
-        cube([shell_x_max - shell_x_min,
+      translate([(shell_x_seam + shell_x_outboard)/2,
+                 (shell_y_min   + shell_y_max)/2,
+                 shell_z_top / 2])
+        cube([shell_x_outboard - shell_x_seam,
               shell_y_max - shell_y_min,
-              shell_z_top], center=true);
-    // Inner cavity (subtract a slightly smaller box, leaving walls)
-    translate([(shell_x_min + shell_x_max)/2,
+              shell_z_top], center = true);
+    // Subtract the cased-phone cavity (keeps a small front-bezel lip).
+    translate([(shell_x_seam + shell_x_outboard)/2,
                (shell_y_min + shell_y_max)/2,
-               (case_back_thk + shell_z_top)/2 + 0.01])
-      cube([shell_x_max - shell_x_min - 2*case_wall_thk,
-            shell_y_max - shell_y_min - 2*case_wall_thk,
-            shell_z_top - case_back_thk], center=true);
+               (phone_thk - cradle_lip_h) / 2])
+      cube([shell_x_outboard - shell_x_seam + 0.5,
+            phone_wid + 1.0,
+            phone_thk - cradle_lip_h + 0.01], center = true);
+    // Subtract the keywell interior above the back panel.
+    translate([(shell_x_seam + shell_x_outboard)/2,
+               (shell_y_min + shell_y_max)/2,
+               (phone_thk + case_back_thk + shell_z_top)/2 + 0.01])
+      cube([(shell_x_outboard - shell_x_seam) - 2*case_wall_thk,
+            (shell_y_max - shell_y_min)     - 2*case_wall_thk,
+             shell_z_top - phone_thk - case_back_thk], center = true);
   }
-  // Dock magnet pockets on the back panel (z ≈ 0..magnet_pocket_h)
+
+  // SEAM magnet pockets — on the inboard (-X) wall, perpendicular to X
   color([0.9, 0.3, 0.3])
-    for (m = dock_magnets)
-      translate([m[0], m[1], magnet_pocket_h/2])
-        cylinder(h = magnet_pocket_h, d = magnet_pocket_d, center = true);
-  // Mate magnet pockets on the bowl rim (z ≈ shell_z_top - magnet_pocket_h)
+    for (m = seam_magnets)
+      translate([shell_x_seam + magnet_pocket_h/2 - 0.05, m[1], m[2]])
+        rotate([0, 90, 0])
+          cylinder(h = magnet_pocket_h, d = magnet_pocket_d, center = true);
+
+  // RIM magnet pockets — on the keywell-bowl top (+Z), perpendicular to Z
   color([0.3, 0.6, 0.9])
-    for (m = mate_magnets)
+    for (m = rim_magnets)
       translate([m[0], m[1], shell_z_top - magnet_pocket_h/2])
         cylinder(h = magnet_pocket_h, d = magnet_pocket_d, center = true);
 }
@@ -343,10 +384,11 @@ module hand_right() {
     }
 }
 
-// Right-hand half-shell anchored to phone (in-use position).
+// Right-hand half-shell in cased-phone frame. The cradle's own origin
+// is the seam plane (x=0), so we just call it directly; no
+// hand_anchor offset (the keywell math inside still uses hand_anchor).
 module hand_right_shell() {
-  translate([hand_anchor_x, hand_anchor_y, phone_thk])
-    half_shell_local();
+  half_shell_local();
 }
 
 // Mirror right hand across the YZ plane.
@@ -359,8 +401,8 @@ module hand_left_shell() {
   mirror([1, 0, 0]) hand_right_shell();
 }
 
-// Phone body — rounded-corner hull + camera bump silhouette.
-// TODO: refine bump cluster (3 lens cylinders) when polish is wanted.
+// Cased phone body — rounded-corner Otterbox Commuter envelope.
+// Geometry-only (no cutouts), used as the cradled object for layout.
 module phone_body() {
   color([0.18, 0.18, 0.20, 0.55]) {
     hull() {
@@ -370,7 +412,7 @@ module phone_body() {
                      sy * (phone_wid/2 - corner_r), 0])
             cylinder(h = phone_thk, r = corner_r);
     }
-    // Camera bump
+    // Camera bump silhouette on the back of the case.
     translate([cam_x, cam_y, phone_thk])
       hull() {
         for (sx = [-1, 1])
@@ -417,24 +459,23 @@ render_mode = "in_use";
 transit_mate_gap = 2;
 
 if (render_mode == "in_use") {
+  // Cased phone in the middle; right cradle on +X half, left on -X.
   phone_body();
   hand_right_shell();
   hand_right();
   hand_left_shell();
   hand_left();
 } else if (render_mode == "transit") {
-  // Right half: removed from its in-use hand_anchor position so it
-  // sits centered at the world origin (the transit unit has no phone).
-  translate([-hand_anchor_x, 0, -phone_thk]) {
+  // No phone; halves face-to-face, mated at the keywell rim. Both
+  // halves recentered on world origin so they overlap in XY, then
+  // left half flipped + lifted to mate at the rim plane.
+  translate([-shell_center_x, 0, 0]) {
     hand_right_shell();
     hand_right();
   }
-  // Left half: same recentering, then flipped 180° around X so its
-  // bowl opens DOWN, then lifted in Z to mate at the rim of the
-  // right half.
   translate([0, 0, 2*shell_z_top + transit_mate_gap])
     rotate([180, 0, 0])
-      translate([hand_anchor_x, 0, -phone_thk]) {
+      translate([shell_center_x, 0, 0]) {
         hand_left_shell();
         hand_left();
       }
