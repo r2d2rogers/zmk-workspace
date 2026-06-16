@@ -220,6 +220,8 @@ shell_x_step           = 25;  // [10:0.5:60]
 transit_x_shift        = (shell_x_step - shell_x_seam) * 2;  // [0:0.5:120]
 // Gap between mated faces in transit (mm).
 transit_mate_gap       = 2;   // [0:0.1:8]
+// Outer corner rounding of the half-shell (vertical edges).
+corner_r_shell         = 3;   // [0:0.5:8]
 
 /* [Shoulder Wing — thumb cluster home] */
 // A small +X bump off the main cradle's outboard wall, sized to hold
@@ -253,16 +255,19 @@ seam_magnets = [
   [ 0,  30, phone_thk/2 ],
 ];
 
-// RIM magnets — around the keywell-bowl rim on the (+Z) face. Reversed
-// polarity from SEAM magnets so a transit-mode mate can't accidentally
-// drop into in-use mode if the halves are jostled with no phone.
+// RIM magnets — on the two TRANSIT contact surfaces. In transit the
+// flipped+shifted left half lands its tall-zone bottom on the right
+// half's SHORT-zone top (z=shell_z_short_top), and its short-zone on the
+// right half's TALL-zone top (z=shell_z_top). Put magnets on both
+// surfaces so the mated unit is held. [x, y, z] — z is the surface.
+// Reversed polarity vs SEAM so a no-phone jostle can't re-dock in-use.
 rim_magnets = [
-  [ 25,  35, 0 ],
-  [ 25, -35, 0 ],
-  [ -10, 35, 0 ],
-  [ -10,-35, 0 ],
-  [ shell_x_outboard - 10,  35, 0 ],
-  [ shell_x_outboard - 10, -35, 0 ],
+  // short-zone top (inboard, low)
+  [ 14,  35, shell_z_short_top ],
+  [ 14, -35, shell_z_short_top ],
+  // tall-zone top (outboard, high)
+  [ 55,  35, shell_z_top ],
+  [ 55, -35, shell_z_top ],
 ];
 
 /* [Palm Key — grip-activation dead-man switch] */
@@ -287,16 +292,27 @@ palm_inset_depth = 3;    // [1:0.5:8]    // recess depth into the wall
 //  MODULES — preview-grade. TODO markers mark real-build work.
 // ---------------------------------------------------------------------
 
-// Switch+keycap preview at origin. Single-color, no cutout.
-// TODO: replace with real Choc v1 plate cutout module (14mm + 5
-//       retention notches per Kailh datasheet, plate_thk=1.3).
+// Switch + keycap preview. The plate (1.3mm) carries a real Choc v1
+// 14mm square cutout with the two side retention notches; the keycap
+// sits above it. Active surface is +Z. Origin is the plate top center.
 module key_preview() {
+  // Mounting plate with Choc cutout (14mm + 1mm notches each side).
   color([0.40, 0.50, 0.72])
-    translate([0, 0, plate_thk/2])
-    cube([keycap_xy, keycap_xy, plate_thk], center=true);
+    difference() {
+      translate([0, 0, plate_thk/2])
+        cube([keycap_xy, keycap_xy, plate_thk], center = true);
+      // 14mm square switch hole
+      translate([0, 0, plate_thk/2])
+        cube([choc_cutout, choc_cutout, plate_thk + 1], center = true);
+      // retention notches (Kailh Choc: 5mm wide x 1mm deep, both sides)
+      for (sy = [-1, 1])
+        translate([0, sy * (choc_cutout/2 + 0.5), plate_thk/2])
+          cube([5, 1.2, plate_thk + 1], center = true);
+    }
+  // Keycap above the plate.
   color([0.55, 0.65, 0.88, 0.85])
     translate([0, 0, plate_thk + keycap_h/2])
-    cube([keycap_xy - 2, keycap_xy - 2, keycap_h], center=true);
+      cube([keycap_xy - 2, keycap_xy - 2, keycap_h], center = true);
 }
 
 // Place one key at (col, row) in the hand-local frame.
@@ -359,6 +375,16 @@ module keywell_local() {
 module thumb_key() {
   color([0.40, 0.50, 0.72])
     cube([thumb_key_size, thumb_key_size, plate_thk], center = true);
+}
+
+// Rounded box from corner coords — hull of 4 vertical cylinders. Used
+// for the shell outer hull so vertical edges are filleted, not square.
+module rbox(x0, x1, y0, y1, zh, r) {
+  hull()
+    for (sx = [x0 + r, x1 - r])
+      for (sy = [y0 + r, y1 - r])
+        translate([sx, sy, 0])
+          cylinder(h = zh, r = r);
 }
 
 module thumb_cluster_local() {
@@ -431,22 +457,16 @@ module half_shell_local() {
   //     OUTER L-step face has a 2.5 mm wall behind it (the actual outer
   //     step skin) but only ABOVE shell_z_short_top.
   difference() {
-    // Outer hull = tall + short + wing boxes booleaned together.
+    // Outer hull = tall + short + wing boxes booleaned together, outer
+    // vertical edges rounded by corner_r_shell. Tall zone extends a hair
+    // inboard (overlap) so the step junction unions cleanly.
     union() {
       color([0.7, 0.7, 0.75, 0.45])
-        translate([(shell_x_step + shell_x_outboard)/2,
-                   (shell_y_min  + shell_y_max)/2,
-                   shell_z_top / 2])
-          cube([shell_x_outboard - shell_x_step,
-                shell_y_max - shell_y_min,
-                shell_z_top], center = true);
+        rbox(shell_x_step - corner_r_shell, shell_x_outboard,
+             shell_y_min, shell_y_max, shell_z_top, corner_r_shell);
       color([0.7, 0.7, 0.75, 0.45])
-        translate([(shell_x_seam + shell_x_step)/2,
-                   (shell_y_min  + shell_y_max)/2,
-                   shell_z_short_top / 2])
-          cube([shell_x_step - shell_x_seam,
-                shell_y_max - shell_y_min,
-                shell_z_short_top], center = true);
+        rbox(shell_x_seam, shell_x_step,
+             shell_y_min, shell_y_max, shell_z_short_top, corner_r_shell);
       // Shoulder wing — retired (wing_x_extension=0). Guarded so zero
       // doesn't make a degenerate cube.
       if (wing_x_extension > 0)
@@ -507,10 +527,10 @@ module half_shell_local() {
         rotate([0, 90, 0])
           cylinder(h = magnet_pocket_h, d = magnet_pocket_d, center = true);
 
-  // RIM magnet pockets — on the keywell-bowl top (+Z), perpendicular to Z
+  // RIM magnet pockets — on the transit contact surfaces (per-magnet z).
   color([0.3, 0.6, 0.9])
     for (m = rim_magnets)
-      translate([m[0], m[1], shell_z_top - magnet_pocket_h/2])
+      translate([m[0], m[1], m[2] - magnet_pocket_h/2])
         cylinder(h = magnet_pocket_h, d = magnet_pocket_d, center = true);
 }
 
