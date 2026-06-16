@@ -402,10 +402,40 @@ module keywell_web() {
   }
 }
 
+// Perimeter walls — drop a skirt from the outer ring of the web down to
+// the cradle floor (hand-local z=0, since hand_anchor_z == cradle top).
+// Each wall segment hulls two adjacent perimeter keys together with
+// their projection() shadows on the floor — the shadow is true world-
+// down (not the key's curled local frame), so walls fall straight even
+// under the 80° trigger row. Interior stays hollow for switch bodies.
+module keywell_walls() {
+  // perimeter ring, ordered (top L→R, down index side, bottom R→L,
+  // up pinky side). Built generically so it tracks cols/rows changes.
+  ring = concat(
+    [ for (c = [0 : cols_per_hand-1])        [c, 0] ],
+    [ for (r = [1 : rows_per_col-1])         [cols_per_hand-1, r] ],
+    [ for (c = [cols_per_hand-2 : -1 : 0])   [c, rows_per_col-1] ],
+    [ for (r = [rows_per_col-2 : -1 : 1])    [0, r] ]
+  );
+  for (i = [0 : len(ring) - 1]) {
+    a = ring[i];
+    b = ring[(i + 1) % len(ring)];
+    hull() {
+      place_key(a[0], a[1]) web_pad();
+      linear_extrude(0.6) projection() place_key(a[0], a[1]) web_pad();
+      place_key(b[0], b[1]) web_pad();
+      linear_extrude(0.6) projection() place_key(b[0], b[1]) web_pad();
+    }
+  }
+}
+
 // Finger keywell — right hand, in hand-local frame. Webbed plate body
-// + keycaps on top.
+// + perimeter walls down to the floor + keycaps on top.
 module keywell_local() {
-  color([0.40, 0.50, 0.72]) keywell_web();
+  color([0.40, 0.50, 0.72]) {
+    keywell_web();
+    keywell_walls();
+  }
   for (c = [0 : cols_per_hand - 1])
     for (r = [0 : rows_per_col - 1])
       place_key(c, r) keycap_only();
