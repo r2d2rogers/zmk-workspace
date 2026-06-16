@@ -355,11 +355,60 @@ module place_key(col, row) {
             children();
 }
 
-// Finger keywell — right hand, in hand-local frame.
+// Keycap only (no plate) — for rendering caps above the webbed plate.
+module keycap_only() {
+  color([0.55, 0.65, 0.88, 0.85])
+    translate([0, 0, plate_thk + keycap_h/2])
+      cube([keycap_xy - 2, keycap_xy - 2, keycap_h], center = true);
+}
+
+// Solid plate pad at a key (no cutout) — the hull unit for the web.
+module web_pad() {
+  translate([0, 0, plate_thk/2])
+    cube([keycap_xy, keycap_xy, plate_thk], center = true);
+}
+
+// Sculpted keywell web — the dactyl-manuform body. Each key gets a
+// plate pad; adjacent pads are hull()'d (down columns, across columns,
+// and diagonally) into one continuous contoured surface that follows
+// the column curl + splay. Choc cutouts are then subtracted per key.
+// Parametric off place_key(), so it re-forms automatically when the
+// column geometry is tuned.
+module keywell_web() {
+  difference() {
+    union() {
+      // down-column strips
+      for (c = [0 : cols_per_hand - 1])
+        for (r = [0 : rows_per_col - 2])
+          hull() { place_key(c, r) web_pad(); place_key(c, r+1) web_pad(); }
+      // across-column strips
+      for (c = [0 : cols_per_hand - 2])
+        for (r = [0 : rows_per_col - 1])
+          hull() { place_key(c, r) web_pad(); place_key(c+1, r) web_pad(); }
+      // diagonal fill (closes the 4-key gaps)
+      for (c = [0 : cols_per_hand - 2])
+        for (r = [0 : rows_per_col - 2])
+          hull() {
+            place_key(c,   r)   web_pad(); place_key(c+1, r)   web_pad();
+            place_key(c,   r+1) web_pad(); place_key(c+1, r+1) web_pad();
+          }
+    }
+    // switch cutouts
+    for (c = [0 : cols_per_hand - 1])
+      for (r = [0 : rows_per_col - 1])
+        place_key(c, r)
+          translate([0, 0, plate_thk/2])
+            cube([choc_cutout, choc_cutout, plate_thk + 1], center = true);
+  }
+}
+
+// Finger keywell — right hand, in hand-local frame. Webbed plate body
+// + keycaps on top.
 module keywell_local() {
+  color([0.40, 0.50, 0.72]) keywell_web();
   for (c = [0 : cols_per_hand - 1])
     for (r = [0 : rows_per_col - 1])
-      place_key(c, r) key_preview();
+      place_key(c, r) keycap_only();
 }
 
 // Thumb cluster — 4-key cage on the TOP edge, CRADLE frame.
