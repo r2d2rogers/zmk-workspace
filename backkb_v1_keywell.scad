@@ -154,7 +154,9 @@ keycap_h      = 4;   // [3:0.1:9]
 thumb_anchor       = [ 30, -43, 0 ];
 thumb_yaw_z        = -14; // [-45:1:45]
 thumb_pitch_y      = 8;   // [-30:1:30]
-thumb_cube_size    = 12;  // [8:0.5:24]  // edge length of the surrounding cube
+// Cube edge must exceed a keycap (keycap_xy=18) plus wall, or the
+// face keys overlap into a tangle. 22 gives ~2mm gap between caps.
+thumb_cube_size    = 22;  // [16:0.5:32]  // edge length of the surrounding cube
 
 // ---------------------------------------------------------------------
 //  HALF-CASE CRADLE — wraps an Otterbox-cased phone, no case mods
@@ -334,16 +336,18 @@ module keywell_local() {
 }
 
 // Thumb cluster — right hand, in hand-local frame.
-// 4-key cube layout: HOME on bottom face (cap +Z, parallel to screen),
-// 3 side faces wrapping the thumb tip. Press surfaces face INWARD
-// toward the thumb — thumb pushes OUTWARD against each face to press.
+// 4-key cube around the thumb tip. The thumb enters the cube from the
+// palm/shoulder side (+X), so the +X face is OPEN (thumb shaft) and the
+// top (+Z) is open too. The 4 keys are on the other faces, press
+// surfaces facing INWARD — the thumb pushes OUTWARD against each:
 //
-//   HOME   at  (0,  0,  0)            cap normal +Z   (push down)
-//   +X     at  (hc, 0, hc)            cap normal -X   (flex back)
-//   +Y     at  (0, hc, hc)            cap normal -Y   (lateral pinky)
-//   -Y     at  (0,-hc, hc)            cap normal +Y   (lateral index)
+//   HOME   at  (0,  0,  0)            cap normal +Z   push DOWN
+//   -X     at  (-hc, 0, hc)           cap normal +X   PUSH forward (tip in)
+//   +Y     at  (0,  hc, hc)           cap normal -Y   lateral toward pinky
+//   -Y     at  (0, -hc, hc)           cap normal +Y   lateral toward index
 //
-// where hc = thumb_cube_size / 2.
+// Open faces: +X (thumb entry, toward palm) and +Z (top). where
+// hc = thumb_cube_size / 2.
 module thumb_cluster_local() {
   hc = thumb_cube_size / 2;
   translate(thumb_anchor)
@@ -351,9 +355,9 @@ module thumb_cluster_local() {
       // HOME — parallel to screen, no rotation
       translate([0, 0, 0])
         key_preview();
-      // +X face — cap normal -X, pressed by flexing thumb back
-      translate([hc, 0, hc])
-        rotate([0, -90, 0])
+      // -X face — cap normal +X, pressed by thumb tip pushing forward
+      translate([-hc, 0, hc])
+        rotate([0, 90, 0])
           key_preview();
       // +Y face — cap normal -Y, pressed by lateral tip toward pinky
       translate([0, hc, hc])
