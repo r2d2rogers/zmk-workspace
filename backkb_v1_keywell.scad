@@ -260,13 +260,20 @@ rim_magnets = [
   [ shell_x_outboard - 10, -35, 0 ],
 ];
 
-/* [Palm Key] */
-// 3-vector anchor [x palm-side, y inboard, z above floor] in hand-local
-// frame. Same Z constraint as thumb (>=0). X moved IN from 32 → 18 so
-// the cap doesn't shoot past the outboard cradle wrap at world X=86.
-palm_anchor   = [ 18, -33, 0 ];
-palm_yaw_z    = -8;   // [-45:1:45]
-palm_pitch_y  = -10;  // [-45:1:30]
+/* [Palm Key — grip-activation dead-man switch] */
+// NOT a normal keycode. Both palm keys (one per half) must be held for
+// the board to go active — signals "gripped between two hands", blocks
+// stray presses when stowed / one-handed. INSET flush into the palm-
+// rest surface so the resting heel presses it just by gripping.
+// (See memory: palm key = grip-activation dead-man.)
+//
+// Anchor in hand-local frame. Placed on the outboard palm-rest region,
+// +Y side (opposite the thumb cube at -Y) where the palm heel lands.
+palm_anchor      = [ 22, 18, 0 ];
+palm_yaw_z       = 0;    // [-45:1:45]
+palm_pitch_y     = 0;    // [-45:1:30]
+palm_inset_xy    = 16;   // [10:0.5:24]  // recess pocket footprint
+palm_inset_depth = 3;    // [1:0.5:8]    // how deep the key sits below surface
 
 /* [Hidden] */
 // Anything below this group marker is hidden from the Customizer panel
@@ -370,11 +377,27 @@ module thumb_cluster_local() {
     }
 }
 
-// Palm key — right hand, in hand-local frame.
+// Palm key — grip-activation dead-man switch, INSET flush into the
+// palm-rest surface. Rendered as a recessed pocket (rim frame) with the
+// switch flush at the bottom, colored GREEN to mark it as the special
+// activation key (distinct from the blue keycap previews).
 module palm_key_local() {
   translate(palm_anchor)
-    rotate([0, palm_pitch_y, palm_yaw_z])
-      key_preview();
+    rotate([0, palm_pitch_y, palm_yaw_z]) {
+      // Recess rim — a frame showing the inset pocket walls.
+      color([0.6, 0.6, 0.65, 0.5])
+        difference() {
+          cube([palm_inset_xy + 4, palm_inset_xy + 4, palm_inset_depth],
+               center = true);
+          cube([palm_inset_xy, palm_inset_xy, palm_inset_depth + 1],
+               center = true);
+        }
+      // Activation switch — flush at the bottom of the recess (green).
+      translate([0, 0, -palm_inset_depth/2 + plate_thk/2])
+        color([0.3, 0.7, 0.4])
+          cube([palm_inset_xy - 2, palm_inset_xy - 2, plate_thk],
+               center = true);
+    }
 }
 
 // Half-cradle — wraps half the cased phone (one short end), provides
