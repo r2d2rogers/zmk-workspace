@@ -138,25 +138,23 @@ choc_cutout   = 14;  // [13:0.1:16]
 keycap_xy     = 18;  // [12:0.5:22]
 keycap_h      = 4;   // [3:0.1:9]
 
-/* [Thumb Cluster — Sneftel-style cage] */
-// 4-paddle fan inspired by the SOWGull / Gull "thumb cage" by Sneftel
-// (TC_INTER_PADDLE_ANGLE=80°, ARCLEN=12mm, radius~8.6mm in their model).
-// Adapted for backkb's back-of-phone Z budget: fan around Z axis (in the
-// XY plane) instead of around X — paddles still face +Z so the thumb
-// presses them by curling toward the palm.
+/* [Thumb Cluster — 4-face cube] */
+// 4 keys arranged on 4 of the 6 faces of a virtual cube around the
+// thumb tip rest position. The thumb's natural motions reach each:
+//   HOME    — bottom face of cube, parallel to screen (cap +Z normal).
+//             Pressed by push-down.
+//   +X face — pressed by thumb FLEXING back toward the palm.
+//   +Y face — pressed by lateral tip motion toward pinky side.
+//   -Y face — pressed by lateral tip motion toward index side.
+// The -X face (away from palm) is unused — thumb shouldn't extend.
+// The -Z face (below) is unused — no thumb reach from underneath.
 //
 // 3-vector anchor [x palm-side, y inboard, z above floor] in hand-local
-// frame. Z >= 0 keeps keys above the cradle back panel. Default places
-// cluster INSIDE the shoulder wing — out at the palm-corner where the
-// thumb naturally rests, so paddles are reached by flex/lateral motion
-// not by extending the thumb.
-thumb_anchor       = [ 30, -40, 0 ];
-thumb_yaw_z        = -14; // [-45:1:45]   // whole-cluster yaw
-thumb_pitch_y      = 8;   // [-30:1:30]   // whole-cluster pitch
-thumb_count        = 4;   // [1:1:6]      // number of paddles
-thumb_fan_angle    = 60;  // [0:1:240]    // total fan span across all paddles
-thumb_fan_radius   = 11;  // [4:0.5:30]   // distance from pivot to each key
-thumb_paddle_tilt  = 6;   // [-30:0.5:30] // per-paddle outward tilt
+// frame. Default places cluster INSIDE the shoulder wing.
+thumb_anchor       = [ 30, -43, 0 ];
+thumb_yaw_z        = -14; // [-45:1:45]
+thumb_pitch_y      = 8;   // [-30:1:30]
+thumb_cube_size    = 12;  // [8:0.5:24]  // edge length of the surrounding cube
 
 // ---------------------------------------------------------------------
 //  HALF-CASE CRADLE — wraps an Otterbox-cased phone, no case mods
@@ -227,8 +225,8 @@ transit_mate_gap       = 2;   // [0:0.1:8]
 // not inside the main keywell.
 wing_x_extension  = 12;   // [0:0.5:25]   how far +X past shell_x_outboard
 wing_y_min        = -62;  // [-70:0.5:-25]
-wing_y_max        = -28;  // [-45:0.5:0]
-wing_z_top_extra  = 7;    // [0:0.5:20]
+wing_y_max        = -25;  // [-45:0.5:0]
+wing_z_top_extra  = 15;   // [0:0.5:25]   cube layout needs height for side keys
 wing_z_top        = shell_z_back + case_back_thk + wing_z_top_extra;
 wing_x_outboard   = shell_x_outboard + wing_x_extension;
 
@@ -336,25 +334,36 @@ module keywell_local() {
 }
 
 // Thumb cluster — right hand, in hand-local frame.
-// 4-paddle Sneftel-style cage: fan in XY-plane (around Z axis), each
-// paddle on a small radius from the cluster pivot, each tilted outward
-// so its press surface faces the thumb's angular sector.
+// 4-key cube layout: HOME on bottom face (cap +Z, parallel to screen),
+// 3 side faces wrapping the thumb tip. Press surfaces face INWARD
+// toward the thumb — thumb pushes OUTWARD against each face to press.
 //
-// Fan points in -Y direction (away from the finger columns) so paddles
-// sit BELOW the keywell instead of bumping into idx_inner. Each paddle
-// then rotates outward by thumb_paddle_tilt so the press surfaces face
-// up-and-toward-the-thumb.
+//   HOME   at  (0,  0,  0)            cap normal +Z   (push down)
+//   +X     at  (hc, 0, hc)            cap normal -X   (flex back)
+//   +Y     at  (0, hc, hc)            cap normal -Y   (lateral pinky)
+//   -Y     at  (0,-hc, hc)            cap normal +Y   (lateral index)
+//
+// where hc = thumb_cube_size / 2.
 module thumb_cluster_local() {
+  hc = thumb_cube_size / 2;
   translate(thumb_anchor)
-    rotate([0, thumb_pitch_y, thumb_yaw_z])
-      for (i = [0 : thumb_count - 1]) {
-        step  = thumb_count > 1 ? thumb_fan_angle / (thumb_count - 1) : 0;
-        angle = -thumb_fan_angle / 2 + i * step;
-        rotate([0, 0, angle])                     // fan around Z
-          translate([0, -thumb_fan_radius, 0])    // OUT along -Y (away from cols)
-            rotate([thumb_paddle_tilt, 0, 0])     // tilt paddle outward
-              key_preview();
-      }
+    rotate([0, thumb_pitch_y, thumb_yaw_z]) {
+      // HOME — parallel to screen, no rotation
+      translate([0, 0, 0])
+        key_preview();
+      // +X face — cap normal -X, pressed by flexing thumb back
+      translate([hc, 0, hc])
+        rotate([0, -90, 0])
+          key_preview();
+      // +Y face — cap normal -Y, pressed by lateral tip toward pinky
+      translate([0, hc, hc])
+        rotate([90, 0, 0])
+          key_preview();
+      // -Y face — cap normal +Y, pressed by lateral tip toward index
+      translate([0, -hc, hc])
+        rotate([-90, 0, 0])
+          key_preview();
+    }
 }
 
 // Palm key — right hand, in hand-local frame.
