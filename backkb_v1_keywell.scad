@@ -152,9 +152,13 @@ keycap_h      = 4;   // [3:0.1:9]
 thumb_edge_x       = 60;  // [40:0.5:80]  // position along the top edge
 thumb_edge_z       = 15;  // [0:0.5:28]   // height — sit as a tower on the edge
 thumb_edge_yaw     = 0;   // [-45:1:45]   // cluster yaw to match grip
-// Cube edge must exceed a keycap (keycap_xy=18) plus wall, or the
-// face keys overlap into a tangle. 22 gives ~2mm gap between caps.
-thumb_cube_size    = 22;  // [16:0.5:32]
+// TIGHT cage — the thumb stays PLANTED in the center and makes small
+// tilts/presses to hit each surrounding key. Keep this small (sized to
+// the thumb tip, not a keycap) so the keys surround the tip closely.
+// The cage keys use a compact switch-sized plate (thumb_key_size), so a
+// tight cube reads as 4 close keys, not the overlapping-keycap tangle.
+thumb_cube_size    = 15;  // [10:0.5:24]  // tip-sized, NOT keycap-sized
+thumb_key_size     = 12;  // [8:0.5:16]   // compact cage-key footprint
 
 // ---------------------------------------------------------------------
 //  HALF-CASE CRADLE — wraps an Otterbox-cased phone, no case mods
@@ -350,25 +354,35 @@ module keywell_local() {
 //   LEFT   (0,  0, hc)  no rot          -> cap +Z  rock to back
 //   RIGHT  (0,  0,-hc)  rotate[180,0,0] -> cap -Z  rock to front
 //   4TH    (-hc,hc, 0)  rotate[-90,0,0] -> cap +Y  extend inboard along edge
+// Compact cage key — a thin switch-sized plate (not an 18mm keycap),
+// so the tight thumb cage reads as 4 close keys around the tip.
+module thumb_key() {
+  color([0.40, 0.50, 0.72])
+    cube([thumb_key_size, thumb_key_size, plate_thk], center = true);
+}
+
 module thumb_cluster_local() {
   hc = thumb_cube_size / 2;
+  // The thumb tip sits at the cage CENTER and makes small motions. The
+  // 4 keys surround it on the faces it tilts/presses toward — it does
+  // NOT travel along the edge between them.
   translate([thumb_edge_x, shell_y_max - case_wall_thk, thumb_edge_z])
     rotate([0, 0, thumb_edge_yaw]) {
-      // HOME — press toward phone, cap faces +Y (outward to thumb)
+      // HOME — press toward phone (-Y), key on the +Y inner face
       translate([0, hc, 0])
         rotate([-90, 0, 0])
-          key_preview();
-      // LEFT cage — back side, cap +Z
+          thumb_key();
+      // LEFT cage — tilt to back (+Z)
       translate([0, 0, hc])
-        key_preview();
-      // RIGHT cage — front side, cap -Z
+        thumb_key();
+      // RIGHT cage — tilt to front (-Z)
       translate([0, 0, -hc])
         rotate([180, 0, 0])
-          key_preview();
-      // 4TH — extend inboard along the edge, cap +Y
-      translate([-hc, hc, 0])
-        rotate([-90, 0, 0])
-          key_preview();
+          thumb_key();
+      // 4TH — small extend inboard (-X)
+      translate([-hc, 0, 0])
+        rotate([0, 90, 0])
+          thumb_key();
     }
 }
 
