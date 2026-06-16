@@ -38,21 +38,22 @@
 
 $fn = 48;
 
-// ---------------------------------------------------------------------
-//  PHONE BODY — S24 Ultra in Otterbox Commuter case (cradled object)
-// ---------------------------------------------------------------------
-// The backkb halves don't grip the phone directly; they cradle the
-// already-cased phone. Sizes here are the OUTSIDE envelope of the
-// Commuter case, not the bare phone. Adjust if you measure your
-// case differently.
-phone_len_bare = 162.3;
-phone_wid_bare =  79.0;
-phone_thk_bare =   8.6;
+/* [Render Mode] */
+// Which configuration to render — in_use (phone + halves docked),
+// transit (interlocked pocket brick), or right (single half).
+render_mode = "in_use"; // ["in_use", "transit", "right"]
 
-// Otterbox Commuter add (per face). Commuter is the "slim" tier; rough
-// numbers from teardowns and pocket-feel measurements.
-case_add_xy   =  2.5;     // each long/short edge adds ~2.5 mm
-case_add_z    =  2.2;     // back of case adds ~2.2 mm; front lip a bit less
+/* [Phone Body — S24U bare] */
+// Bare S24U dimensions (mm) — only adjust if Samsung ever changes.
+phone_len_bare = 162.3; // [150:0.1:175]
+phone_wid_bare =  79.0; // [70:0.1:90]
+phone_thk_bare =   8.6; // [6:0.1:12]
+
+/* [Phone Case — Otterbox Commuter add] */
+// Per-face add from the Commuter case. Bump these if you measure your
+// case differently or swap to a thicker case (Defender etc).
+case_add_xy   =  2.5; // [0:0.1:8]
+case_add_z    =  2.2; // [0:0.1:8]
 
 // Cased outer dims (what the cradle wraps around).
 phone_len     = phone_len_bare + 2*case_add_xy;   // ~167.3
@@ -67,29 +68,23 @@ cam_thk       = 3.6;
 cam_x         = -phone_len/2 + 8 + cam_w/2;
 cam_y         =  phone_wid/2 - 8 - cam_h/2;
 
-// ---------------------------------------------------------------------
-//  HAND PLACEMENT
-// ---------------------------------------------------------------------
-// Right-hand wrist anchor — wrist sits just inboard of the right palm.
-// Now measured from cased-phone center toward the right short end.
-hand_anchor_x = 55;       // x of wrist (in cased-phone frame)
-hand_anchor_y =  0;
+/* [Hand Placement] */
+// Wrist anchor X — distance from cased-phone center to right wrist
+// (mirrored for left). Higher = palm sits further outboard.
+hand_anchor_x = 55;   // [30:0.5:80]
+hand_anchor_y =  0;   // [-15:0.5:15]
 // Home Z is the keywell's lowest point above the cradle back panel.
-// case_back_thk sits between cased-phone back and the keywell floor.
 hand_anchor_z = phone_thk + case_back_thk_placeholder();
-// Placeholder hack: case_back_thk is defined later in the file (in the
-// half-shell block) but hand_anchor_z needs it. Pin it here.
 function case_back_thk_placeholder() = 2;
 
-// Whole-hand tilt — fine adjustments after the per-column block is set
-hand_tent_x   = 0;        // rotate around X (lifts pinky side or index)
-hand_pitch_y  = 4;        // rotate around Y (tips top of column out)
+// Whole-hand tilt around X (lifts pinky or index side).
+hand_tent_x   = 0;    // [-25:0.5:25]
+// Whole-hand pitch around Y (tips top of column toward / away).
+hand_pitch_y  = 4;    // [-15:0.5:20]
 
-// ---------------------------------------------------------------------
-//  COLUMN GEOMETRY — dactyl-manuform parametric
-// ---------------------------------------------------------------------
-cols_per_hand = 5;        // pinky, ring, middle, idx_outer, idx_inner
-rows_per_col  = 3;        // top / home / bottom
+/* [Column Geometry] */
+cols_per_hand = 5;   // [3:1:6]
+rows_per_col  = 3;   // [2:1:4]
 
 // Column arc — concave (pivot ABOVE home key). Home sits at the bottom
 // of the bowl; both the fingertip-extended row (top) and the palm-tucked
@@ -101,14 +96,11 @@ rows_per_col  = 3;        // top / home / bottom
 // pivot the bottom row through a SHORT-radius arc so it ends up
 // almost perpendicular to the phone back — a real trigger-pull face
 // rather than a slightly-curved row.
-column_curvature_top    = 10;   // deg between home and top (fingertip).
-                                // Flattened from 16° — gives up some
-                                // dactyl bowl-feel but saves ~1 mm Z
-                                // for the pocket-depth budget.
-column_curvature_bottom = 80;   // deg between home and bottom (palm).
-                                // 80 ≈ nearly perpendicular; the row
-                                // face points outward toward the palm,
-                                // pressed by curling the finger back.
+// Column arc: TOP angle (home -> fingertip row). Shallow bowl.
+column_curvature_top    = 10;  // [4:0.5:25]
+// Column arc: BOTTOM angle (home -> palm/trigger row). 80 = nearly
+// perpendicular trigger-pull face.
+column_curvature_bottom = 80;  // [10:1:90]
 
 // Row arc — splay between adjacent columns (around Z, in-plane fan).
 // Small here because columns ride the phone's narrow 79mm short axis.
@@ -131,38 +123,26 @@ column_x_stagger = [ 6,  2,  0,  3, 10 ];
 // is the longest; pinky/index drop.
 column_z_offset  = [-2, -1,  0, -1, -3 ];
 
-// Row pitch (arc-length between rows along column arc).
-row_spacing      = 17;
-
-// Top-arc radius derived from arc-length so row spacing stays honest
-// when you change column_curvature_top. The standard dactyl pivot.
+// Row pitch — arc-length between rows along column arc.
+row_spacing      = 17; // [12:0.5:22]
 row_radius_top    = row_spacing / (column_curvature_top * 3.14159265 / 180);
 
-// Bottom-arc radius is set DIRECTLY (not derived) — kept short so the
-// trigger-pull face stays close to home in X and Z while sweeping
-// through the large column_curvature_bottom angle. Think of it as the
-// rotation radius of the very last finger joint, not the whole finger.
-// Tightened from 12 to 8 mm to pull the bottom-row cap-top down into
-// the pocket-depth budget.
-row_radius_bottom = 8;
+// Bottom-arc radius (set directly, not derived). Tighter = sharper
+// trigger-pull, less Z lift. Loose = more dactyl-ish curve.
+row_radius_bottom = 8; // [4:0.5:30]
 
-// ---------------------------------------------------------------------
-//  SWITCH + PLATE
-// ---------------------------------------------------------------------
-plate_thk     = 1.3;
-choc_cutout   = 14;     // square plate cutout for Kailh Choc v1
-keycap_xy     = 18;     // for clearance preview
-keycap_h      = 4;      // choc, low profile
+/* [Switch + Plate] */
+plate_thk     = 1.3; // [0.8:0.1:2.5]
+choc_cutout   = 14;  // [13:0.1:16]
+keycap_xy     = 18;  // [12:0.5:22]
+keycap_h      = 4;   // [3:0.1:9]
 
-// ---------------------------------------------------------------------
-//  THUMB CLUSTER — 2 keys per side, in hand-local frame
-// ---------------------------------------------------------------------
-// Right-hand thumb cluster sits outboard of index column, dropped down.
-// Anchor is in the hand's local frame (post-anchor translate).
-thumb_anchor  = [ 18, -36, -6 ];   // (x palm-side, y inboard, z down)
-thumb_yaw_z   = -14;
-thumb_pitch_y = 8;
-thumb_spacing = 19;     // between the 2 thumb keys, along the cluster axis
+/* [Thumb Cluster] */
+// 3-vector anchor [x palm-side, y inboard, z down] in hand-local frame.
+thumb_anchor  = [ 18, -36, -6 ];
+thumb_yaw_z   = -14; // [-45:1:45]
+thumb_pitch_y = 8;   // [-30:1:30]
+thumb_spacing = 19;  // [12:0.5:24]
 
 // ---------------------------------------------------------------------
 //  HALF-CASE CRADLE — wraps an Otterbox-cased phone, no case mods
@@ -188,49 +168,41 @@ thumb_spacing = 19;     // between the 2 thumb keys, along the cluster axis
 //     bezel by cradle_lip_h for retention
 //   - Long-edge lips that grip the phone-case sides
 
-case_back_thk    = 2.0;     // back wall against cased phone (mm)
-case_wall_thk    = 2.5;     // side walls of the half-shell
-case_rim_thk     = 2.5;     // bowl-rim ridge thickness
-cradle_lip_h     = 5;       // lip wrap onto phone front bezel (retention)
-cradle_long_extent = 80;    // each half reaches this far inboard from
-                            // its outboard short end. 2 × 80 = 160 mm
-                            // < phone_len 167 mm: leaves a small ~7 mm
-                            // gap at center (room for seam magnets and
-                            // a soft-feel separation strip).
+/* [Half-Cradle Walls] */
+case_back_thk    = 2.0;  // [0.8:0.1:5]
+case_wall_thk    = 2.5;  // [1:0.1:6]
+case_rim_thk     = 2.5;  // [1:0.1:6]
+cradle_lip_h     = 5;    // [0:0.5:12]
+cradle_long_extent = 80; // [40:1:90]
 
-// Half-shell footprint (right hand, in cased-phone frame).
-// X: from phone center (seam) to outboard short end.
 shell_x_seam     = 3;                     // half of 7 mm seam gap
 shell_x_outboard = phone_len/2 + case_wall_thk;
 shell_center_x   = (shell_x_seam + shell_x_outboard) / 2;
-// Y: full cased-phone width (with wall on both long edges).
 shell_y_min      = -phone_wid/2 - case_wall_thk;
 shell_y_max      =  phone_wid/2 + case_wall_thk;
-// Z: from phone-back (z=0 in cradle frame) up by back_thk + keywell.
-shell_z_back     = phone_thk;             // top of cased-phone back
-// 18 mm of keywell zone covers the bottom-row trigger cap (top at
-// ~30.8 mm in cradle frame) with 2 mm clearance. Was 22 (placeholder).
-shell_z_top      = shell_z_back + case_back_thk + 18;  // ~33 mm
+shell_z_back     = phone_thk;
 
-// L-PROFILE — each half is asymmetric in side view:
-//   Tall zone (outboard, contains keywell tower): z up to shell_z_top
-//   Short zone (inboard, just back panel + low shell): z up to shell_z_short_top
-// In transit, one half is X-shifted by transit_x_shift so its tall zone
-// overlaps the OTHER half's short zone — towers sit at opposite X
-// extremes, no tower-on-tower collision, transit Z stays low.
-shell_x_step      = 35;                   // X boundary between short and
-                                          // tall zones (just inboard of
-                                          // the keywell's leftmost cap).
-shell_z_short_top = shell_z_back + case_back_thk + 2;   // ~17 mm (low)
-transit_x_shift   = (shell_x_step - shell_x_seam) * 2;  // 64 mm
-                                          // shifts left half's tall zone
-                                          // over right half's short zone.
+/* [L-Profile + Transit Interlock] */
+// Height of keywell zone above back panel (tall zone of L-profile).
+shell_z_top_extra      = 18;  // [10:0.5:30]
+shell_z_top            = shell_z_back + case_back_thk + shell_z_top_extra;
+// Height of the inboard short zone (just back panel + low shell).
+shell_z_short_extra    = 2;   // [0:0.5:20]
+shell_z_short_top      = shell_z_back + case_back_thk + shell_z_short_extra;
+// X boundary between the short and tall zones (in cradle frame).
+shell_x_step           = 35;  // [10:0.5:60]
+// Transit X-shift for the flipped left half. Default 2*(step-seam)
+// puts the tall zones at opposite X extremes — override to slide one
+// half further in/out and see the interlock change.
+transit_x_shift        = (shell_x_step - shell_x_seam) * 2;  // [0:0.5:120]
+// Gap between mated faces in transit (mm).
+transit_mate_gap       = 2;   // [0:0.1:8]
 
-// Magnets — 6 x 2 mm neodymium discs.
-magnet_d         = 6;
-magnet_h         = 2;
-magnet_pocket_d  = 6.2;
-magnet_pocket_h  = 2.1;
+/* [Magnets] */
+magnet_d         = 6;    // [3:0.1:10]
+magnet_h         = 2;    // [1:0.1:5]
+magnet_pocket_d  = 6.2;  // [3:0.1:10]
+magnet_pocket_h  = 2.1;  // [1:0.1:5]
 
 // SEAM magnets — along the inboard (-X) wall of each half. Polarity
 // alternates per magnet so the two halves only mate in the correct
@@ -254,13 +226,15 @@ rim_magnets = [
   [ shell_x_outboard - 10, -35, 0 ],
 ];
 
-// ---------------------------------------------------------------------
-//  PALM KEY — 1 per side, in hand-local frame
-// ---------------------------------------------------------------------
-// Behind the thumb cluster, low. Pressed by the heel of the thumb pad.
+/* [Palm Key] */
+// 3-vector anchor [x palm-side, y inboard, z down] in hand-local frame.
 palm_anchor   = [ 32, -36, -12 ];
-palm_yaw_z    = -8;
-palm_pitch_y  = -10;
+palm_yaw_z    = -8;   // [-45:1:45]
+palm_pitch_y  = -10;  // [-45:1:30]
+
+/* [Hidden] */
+// Anything below this group marker is hidden from the Customizer panel
+// but still in scope for the program. Use to stash render constants.
 
 // ---------------------------------------------------------------------
 //  MODULES — preview-grade. TODO markers mark real-build work.
@@ -489,11 +463,11 @@ module phone_body() {
 //   "right"    — single right half (print target candidate)
 //
 // CLI override: openscad -D 'render_mode="transit"' -o out.stl file.scad
-
-render_mode = "in_use";
-
-// Gap between the two rim faces when mated face-to-face for transit.
-transit_mate_gap = 2;
+// (render_mode is also set as a Customizer dropdown at the top of the
+// file — use the panel or the CLI -D flag; the editor-pane variable
+// has been moved to the Customizer block.)
+//
+// transit_mate_gap also lives in the L-Profile group above.
 
 if (render_mode == "in_use") {
   // Cased phone in the middle; right cradle on +X half, left on -X.
