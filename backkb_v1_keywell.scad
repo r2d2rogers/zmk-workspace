@@ -111,8 +111,9 @@ row_curvature    = 4;     // deg per column-from-middle
 // middle, idx_outer, idx_inner].
 
 // Y position of each column relative to hand anchor (mm). Pinky on
-// +Y (top edge), index columns on -Y (bottom edge).
-column_y_pos    = [ 30, 15,  0, -14, -28 ];
+// +Y (top edge), index columns on -Y (bottom edge). 18 mm pitch is
+// the Choc standard — earlier value of 14-15 mm caused keycap overlap.
+column_y_pos    = [ 36, 18,  0, -18, -36 ];
 
 // Per-column palm-to-fingertip X stagger (mm). Negative = pulled
 // toward fingertip (further -X for right hand). Middle is the
@@ -178,8 +179,10 @@ cradle_long_extent = 80; // [40:1:90]
 shell_x_seam     = 3;                     // half of 7 mm seam gap
 shell_x_outboard = phone_len/2 + case_wall_thk;
 shell_center_x   = (shell_x_seam + shell_x_outboard) / 2;
-shell_y_min      = -phone_wid/2 - case_wall_thk;
-shell_y_max      =  phone_wid/2 + case_wall_thk;
+// Y extent of the half-shell. Independent of phone_wid — sized to bound
+// the keywell + a buffer. Outer keys at ±36 (col_y), cap edges at ±45.
+shell_y_min      = -47; // [-60:0.5:-30]
+shell_y_max      =  47; // [30:0.5:60]
 shell_z_back     = phone_thk;
 
 /* [L-Profile + Transit Interlock] */
@@ -190,7 +193,9 @@ shell_z_top            = shell_z_back + case_back_thk + shell_z_top_extra;
 shell_z_short_extra    = 2;   // [0:0.5:20]
 shell_z_short_top      = shell_z_back + case_back_thk + shell_z_short_extra;
 // X boundary between the short and tall zones (in cradle frame).
-shell_x_step           = 35;  // [10:0.5:60]
+// Set well inboard of the leftmost keycap edge (middle-column top row
+// reaches ~x=29 with the 10° top curl). Was 35; that clipped caps.
+shell_x_step           = 25;  // [10:0.5:60]
 // Transit X-shift for the flipped left half. Default 2*(step-seam)
 // puts the tall zones at opposite X extremes — override to slide one
 // half further in/out and see the interlock change.
