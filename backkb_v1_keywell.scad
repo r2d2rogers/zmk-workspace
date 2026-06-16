@@ -138,16 +138,22 @@ choc_cutout   = 14;  // [13:0.1:16]
 keycap_xy     = 18;  // [12:0.5:22]
 keycap_h      = 4;   // [3:0.1:9]
 
-/* [Thumb Cluster] */
+/* [Thumb Cluster — Sneftel-style cage] */
+// 4-paddle fan inspired by the SOWGull / Gull "thumb cage" by Sneftel
+// (TC_INTER_PADDLE_ANGLE=80°, ARCLEN=12mm, radius~8.6mm in their model).
+// Adapted for backkb's back-of-phone Z budget: fan around Z axis (in the
+// XY plane) instead of around X — paddles still face +Z so the thumb
+// presses them by curling toward the palm.
+//
 // 3-vector anchor [x palm-side, y inboard, z above floor] in hand-local
-// frame. Z >= 0 keeps the keys above the cradle back panel; negative Z
-// buries them inside cradle material (collides with phone cavity).
-// X reduced so the cluster sits inboard of the outboard cradle wrap.
-// Y pulled inboard 3 mm so the cap edges don't kiss the shell Y wall.
-thumb_anchor  = [ 12, -33, 0 ];
-thumb_yaw_z   = -14; // [-45:1:45]
-thumb_pitch_y = 8;   // [-30:1:30]
-thumb_spacing = 19;  // [12:0.5:24]
+// frame. Z >= 0 keeps keys above the cradle back panel.
+thumb_anchor       = [ 12, -33, 0 ];
+thumb_yaw_z        = -14; // [-45:1:45]   // whole-cluster yaw
+thumb_pitch_y      = 8;   // [-30:1:30]   // whole-cluster pitch
+thumb_count        = 4;   // [1:1:6]      // number of paddles
+thumb_fan_angle    = 60;  // [0:1:240]    // total fan span across all paddles
+thumb_fan_radius   = 11;  // [4:0.5:30]   // distance from pivot to each key
+thumb_paddle_tilt  = 6;   // [-30:0.5:30] // per-paddle outward tilt
 
 // ---------------------------------------------------------------------
 //  HALF-CASE CRADLE — wraps an Otterbox-cased phone, no case mods
@@ -184,11 +190,12 @@ shell_x_seam     = 3;                     // half of 7 mm seam gap
 shell_x_outboard = phone_len/2 + case_wall_thk;
 shell_center_x   = (shell_x_seam + shell_x_outboard) / 2;
 // Y extent of the half-shell. Independent of phone_wid — sized to bound
-// the keywell + a buffer. Outer keys at ±36 (col_y), cap edges at ±45.
-// Bumped to ±49 to give the thumb/palm caps a clean ~1.5 mm buffer
-// past the cavity wall.
-shell_y_min      = -49; // [-60:0.5:-30]
-shell_y_max      =  49; // [30:0.5:60]
+// the keywell + a buffer. With the 4-paddle thumb cage fanning -Y, the
+// extreme paddle caps reach Y ≈ -55. Shell to ±55 keeps them inside.
+// Pinky side doesn't need this much but symmetric Y keeps the L/R mirror
+// symmetric. Use Customizer sliders to scrub tighter.
+shell_y_min      = -55; // [-65:0.5:-30]
+shell_y_max      =  55; // [30:0.5:65]
 shell_z_back     = phone_thk;
 
 /* [L-Profile + Transit Interlock] */
@@ -313,12 +320,25 @@ module keywell_local() {
 }
 
 // Thumb cluster — right hand, in hand-local frame.
+// 4-paddle Sneftel-style cage: fan in XY-plane (around Z axis), each
+// paddle on a small radius from the cluster pivot, each tilted outward
+// so its press surface faces the thumb's angular sector.
+//
+// Fan points in -Y direction (away from the finger columns) so paddles
+// sit BELOW the keywell instead of bumping into idx_inner. Each paddle
+// then rotates outward by thumb_paddle_tilt so the press surfaces face
+// up-and-toward-the-thumb.
 module thumb_cluster_local() {
   translate(thumb_anchor)
     rotate([0, thumb_pitch_y, thumb_yaw_z])
-      for (i = [0, 1])
-        translate([0, i * thumb_spacing, 0])
-          key_preview();
+      for (i = [0 : thumb_count - 1]) {
+        step  = thumb_count > 1 ? thumb_fan_angle / (thumb_count - 1) : 0;
+        angle = -thumb_fan_angle / 2 + i * step;
+        rotate([0, 0, angle])                     // fan around Z
+          translate([0, -thumb_fan_radius, 0])    // OUT along -Y (away from cols)
+            rotate([thumb_paddle_tilt, 0, 0])     // tilt paddle outward
+              key_preview();
+      }
 }
 
 // Palm key — right hand, in hand-local frame.
