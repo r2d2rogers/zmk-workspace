@@ -146,8 +146,11 @@ keycap_h      = 4;   // [3:0.1:9]
 // presses them by curling toward the palm.
 //
 // 3-vector anchor [x palm-side, y inboard, z above floor] in hand-local
-// frame. Z >= 0 keeps keys above the cradle back panel.
-thumb_anchor       = [ 12, -33, 0 ];
+// frame. Z >= 0 keeps keys above the cradle back panel. Default places
+// cluster INSIDE the shoulder wing — out at the palm-corner where the
+// thumb naturally rests, so paddles are reached by flex/lateral motion
+// not by extending the thumb.
+thumb_anchor       = [ 30, -40, 0 ];
 thumb_yaw_z        = -14; // [-45:1:45]   // whole-cluster yaw
 thumb_pitch_y      = 8;   // [-30:1:30]   // whole-cluster pitch
 thumb_count        = 4;   // [1:1:6]      // number of paddles
@@ -215,6 +218,19 @@ shell_x_step           = 25;  // [10:0.5:60]
 transit_x_shift        = (shell_x_step - shell_x_seam) * 2;  // [0:0.5:120]
 // Gap between mated faces in transit (mm).
 transit_mate_gap       = 2;   // [0:0.1:8]
+
+/* [Shoulder Wing — thumb cluster home] */
+// A small +X bump off the main cradle's outboard wall, sized to hold
+// the thumb cage where the thumb naturally rests. The wing connects to
+// the main shell at X=shell_x_outboard and extends OUTBOARD in +X +
+// inboard in -Y. It has its own short keywell zone — paddles sit here,
+// not inside the main keywell.
+wing_x_extension  = 12;   // [0:0.5:25]   how far +X past shell_x_outboard
+wing_y_min        = -62;  // [-70:0.5:-25]
+wing_y_max        = -28;  // [-45:0.5:0]
+wing_z_top_extra  = 7;    // [0:0.5:20]
+wing_z_top        = shell_z_back + case_back_thk + wing_z_top_extra;
+wing_x_outboard   = shell_x_outboard + wing_x_extension;
 
 /* [Magnets] */
 magnet_d         = 6;    // [3:0.1:10]
@@ -369,7 +385,7 @@ module half_shell_local() {
   //     OUTER L-step face has a 2.5 mm wall behind it (the actual outer
   //     step skin) but only ABOVE shell_z_short_top.
   difference() {
-    // Outer hull = tall + short boxes booleaned together.
+    // Outer hull = tall + short + wing boxes booleaned together.
     union() {
       color([0.7, 0.7, 0.75, 0.45])
         translate([(shell_x_step + shell_x_outboard)/2,
@@ -385,6 +401,14 @@ module half_shell_local() {
           cube([shell_x_step - shell_x_seam,
                 shell_y_max - shell_y_min,
                 shell_z_short_top], center = true);
+      // Shoulder wing — small +X bump for the thumb cluster.
+      color([0.75, 0.7, 0.7, 0.45])
+        translate([(shell_x_outboard + wing_x_outboard)/2,
+                   (wing_y_min + wing_y_max)/2,
+                   wing_z_top / 2])
+          cube([wing_x_outboard - shell_x_outboard,
+                wing_y_max - wing_y_min,
+                wing_z_top], center = true);
     }
 
     // Phone cavity — full L length (continuous across both zones).
@@ -415,6 +439,19 @@ module half_shell_local() {
       cube([shell_x_outboard - shell_x_step - 2*case_wall_thk,
             (shell_y_max - shell_y_min) - 2*case_wall_thk,
              shell_z_top - shell_z_short_top + 0.02],
+           center = true);
+
+    // Shoulder wing cavity — extends INBOARD into the main shell area
+    // in the wing's Y range, so the cluster's caps can flow freely
+    // between wing and main keywell without hitting an internal wall.
+    // X starts at shell_x_step + case_wall_thk (same as main high cavity)
+    // and ends at wing_x_outboard - case_wall_thk.
+    translate([(shell_x_step + case_wall_thk + wing_x_outboard - case_wall_thk)/2,
+               (wing_y_min + case_wall_thk + wing_y_max - case_wall_thk)/2,
+               (phone_thk + case_back_thk + wing_z_top)/2])
+      cube([wing_x_outboard - shell_x_step - 2*case_wall_thk,
+            wing_y_max - wing_y_min - 2*case_wall_thk,
+            wing_z_top - phone_thk - case_back_thk + 0.01],
            center = true);
   }
 
