@@ -327,52 +327,67 @@ module palm_key_local() {
 // cradle's back panel sits at z = phone_thk .. phone_thk+case_back_thk.
 // The keywell mounts above that.
 module half_shell_local() {
-  // Outer cradle hull — L-profile.
-  //   Short zone (x_seam .. x_step): low shell, height shell_z_short_top.
-  //   Tall  zone (x_step .. x_outboard): full keywell tower, shell_z_top.
-  // The two zones share the same back-panel cradle around the phone;
-  // they differ only in how high the shell wall rises.
+  // Outer cradle hull — L-profile, then a SINGLE continuous L-shaped
+  // cavity hollow (no internal partition between zones).
+  //
+  // Outer hull: union of the tall zone box (x_step..x_outboard, full
+  // keywell height) and the short zone box (x_seam..x_step, low shell).
+  // Cavity: ONE L-shape with two parts:
+  //   - LOW part — runs the full length (seam to outboard) at z up to
+  //     shell_z_short_top. Below that height the cavity is continuous;
+  //     no inboard partition wall between zones.
+  //   - HIGH part — only in the tall zone above shell_z_short_top.
+  //     This part is inset by case_wall_thk on the inboard side, so the
+  //     OUTER L-step face has a 2.5 mm wall behind it (the actual outer
+  //     step skin) but only ABOVE shell_z_short_top.
   difference() {
-    // Tall zone — outboard, contains keywell tower.
-    color([0.7, 0.7, 0.75, 0.45])
-      translate([(shell_x_step + shell_x_outboard)/2,
-                 (shell_y_min  + shell_y_max)/2,
-                 shell_z_top / 2])
-        cube([shell_x_outboard - shell_x_step,
-              shell_y_max - shell_y_min,
-              shell_z_top], center = true);
-    // Subtract the cased-phone cavity in the tall zone.
-    translate([(shell_x_step + shell_x_outboard)/2,
-               (shell_y_min + shell_y_max)/2,
-               (phone_thk - cradle_lip_h) / 2])
-      cube([shell_x_outboard - shell_x_step + 0.5,
-            phone_wid + 1.0,
-            phone_thk - cradle_lip_h + 0.01], center = true);
-    // Subtract the keywell interior above the back panel.
-    translate([(shell_x_step + shell_x_outboard)/2,
-               (shell_y_min + shell_y_max)/2,
-               (phone_thk + case_back_thk + shell_z_top)/2 + 0.01])
-      cube([(shell_x_outboard - shell_x_step) - 2*case_wall_thk,
-            (shell_y_max - shell_y_min)       - 2*case_wall_thk,
-             shell_z_top - phone_thk - case_back_thk], center = true);
-  }
+    // Outer hull = tall + short boxes booleaned together.
+    union() {
+      color([0.7, 0.7, 0.75, 0.45])
+        translate([(shell_x_step + shell_x_outboard)/2,
+                   (shell_y_min  + shell_y_max)/2,
+                   shell_z_top / 2])
+          cube([shell_x_outboard - shell_x_step,
+                shell_y_max - shell_y_min,
+                shell_z_top], center = true);
+      color([0.7, 0.7, 0.75, 0.45])
+        translate([(shell_x_seam + shell_x_step)/2,
+                   (shell_y_min  + shell_y_max)/2,
+                   shell_z_short_top / 2])
+          cube([shell_x_step - shell_x_seam,
+                shell_y_max - shell_y_min,
+                shell_z_short_top], center = true);
+    }
 
-  // Short zone — inboard, just the back panel + low shell.
-  difference() {
-    color([0.7, 0.7, 0.75, 0.45])
-      translate([(shell_x_seam + shell_x_step)/2,
-                 (shell_y_min  + shell_y_max)/2,
-                 shell_z_short_top / 2])
-        cube([shell_x_step - shell_x_seam,
-              shell_y_max - shell_y_min,
-              shell_z_short_top], center = true);
-    // Subtract the cased-phone cavity in the short zone.
-    translate([(shell_x_seam + shell_x_step)/2,
+    // Phone cavity — full L length (continuous across both zones).
+    translate([(shell_x_seam + shell_x_outboard)/2,
                (shell_y_min + shell_y_max)/2,
                (phone_thk - cradle_lip_h) / 2])
-      cube([shell_x_step - shell_x_seam + 0.5,
+      cube([shell_x_outboard - shell_x_seam + 1.0,
             phone_wid + 1.0,
             phone_thk - cradle_lip_h + 0.01], center = true);
+
+    // Keywell cavity — LOW part (continuous across seam+tall at low z).
+    // X spans the full L from seam-wall to outboard-wall inset.
+    translate([(shell_x_seam + case_wall_thk + shell_x_outboard - case_wall_thk)/2,
+               (shell_y_min + shell_y_max)/2,
+               (phone_thk + case_back_thk + shell_z_short_top)/2])
+      cube([shell_x_outboard - shell_x_seam - 2*case_wall_thk,
+            (shell_y_max - shell_y_min) - 2*case_wall_thk,
+             shell_z_short_top - phone_thk - case_back_thk + 0.01],
+           center = true);
+
+    // Keywell cavity — HIGH part (tall zone only, above short ceiling).
+    // Inset case_wall_thk on inboard side so the outer L-step skin is
+    // preserved above shell_z_short_top. Z range overlaps the low part
+    // by 0.01 mm to ensure CSG joins them into one continuous cavity.
+    translate([(shell_x_step + case_wall_thk + shell_x_outboard - case_wall_thk)/2,
+               (shell_y_min + shell_y_max)/2,
+               (shell_z_short_top + shell_z_top)/2 + 0.01])
+      cube([shell_x_outboard - shell_x_step - 2*case_wall_thk,
+            (shell_y_max - shell_y_min) - 2*case_wall_thk,
+             shell_z_top - shell_z_short_top + 0.02],
+           center = true);
   }
 
   // SEAM magnet pockets — on the inboard (-X) wall, perpendicular to X
