@@ -138,25 +138,23 @@ choc_cutout   = 14;  // [13:0.1:16]
 keycap_xy     = 18;  // [12:0.5:22]
 keycap_h      = 4;   // [3:0.1:9]
 
-/* [Thumb Cluster — 4-face cube] */
-// 4 keys arranged on 4 of the 6 faces of a virtual cube around the
-// thumb tip rest position. The thumb's natural motions reach each:
-//   HOME    — bottom face of cube, parallel to screen (cap +Z normal).
-//             Pressed by push-down.
-//   +X face — pressed by thumb FLEXING back toward the palm.
-//   +Y face — pressed by lateral tip motion toward pinky side.
-//   -Y face — pressed by lateral tip motion toward index side.
-// The -X face (away from palm) is unused — thumb shouldn't extend.
-// The -Z face (below) is unused — no thumb reach from underneath.
+/* [Thumb Cluster — 4-key cage on the TOP edge] */
+// Per the grip reference (conv #119): the thumb lies along the TOP long
+// edge. Motions and the key each reaches:
+//   HOME   press toward the phone (-Y)         — cap +Y, at the edge
+//   LEFT   rock perpendicular toward back (+Z) — cap +Z (cage wall)
+//   RIGHT  rock perpendicular toward front (-Z)— cap -Z (cage wall)
+//   4TH    extend along the long edge (-X)      — cap +Y, inboard
+// The thumb sits on the +Y (outer) side and enters from +X (palm).
 //
-// 3-vector anchor [x palm-side, y inboard, z above floor] in hand-local
-// frame. Default places cluster INSIDE the shoulder wing.
-thumb_anchor       = [ 30, -43, 0 ];
-thumb_yaw_z        = -14; // [-45:1:45]
-thumb_pitch_y      = 8;   // [-30:1:30]
+// Mounted in CRADLE frame on the shell's top edge (structural), not the
+// hand keywell frame.
+thumb_edge_x       = 60;  // [40:0.5:80]  // position along the top edge
+thumb_edge_z       = 15;  // [0:0.5:28]   // height — sit as a tower on the edge
+thumb_edge_yaw     = 0;   // [-45:1:45]   // cluster yaw to match grip
 // Cube edge must exceed a keycap (keycap_xy=18) plus wall, or the
 // face keys overlap into a tangle. 22 gives ~2mm gap between caps.
-thumb_cube_size    = 22;  // [16:0.5:32]  // edge length of the surrounding cube
+thumb_cube_size    = 22;  // [16:0.5:32]
 
 // ---------------------------------------------------------------------
 //  HALF-CASE CRADLE — wraps an Otterbox-cased phone, no case mods
@@ -225,10 +223,13 @@ transit_mate_gap       = 2;   // [0:0.1:8]
 // the main shell at X=shell_x_outboard and extends OUTBOARD in +X +
 // inboard in -Y. It has its own short keywell zone — paddles sit here,
 // not inside the main keywell.
-wing_x_extension  = 12;   // [0:0.5:25]   how far +X past shell_x_outboard
+// Wing RETIRED — the thumb moved to the top edge (conv #119), so the
+// +X shoulder bump is no longer needed. Set wing_x_extension = 0 to
+// retract it; geometry is guarded on >0 so zero is safe.
+wing_x_extension  = 0;    // [0:0.5:25]   how far +X past shell_x_outboard
 wing_y_min        = -62;  // [-70:0.5:-25]
 wing_y_max        = -25;  // [-45:0.5:0]
-wing_z_top_extra  = 15;   // [0:0.5:25]   cube layout needs height for side keys
+wing_z_top_extra  = 15;   // [0:0.5:25]
 wing_z_top        = shell_z_back + case_back_thk + wing_z_top_extra;
 wing_x_outboard   = shell_x_outboard + wing_x_extension;
 
@@ -341,36 +342,31 @@ module keywell_local() {
       place_key(c, r) key_preview();
 }
 
-// Thumb cluster — right hand, in hand-local frame.
-// 4-key cube around the thumb tip. The thumb enters the cube from the
-// palm/shoulder side (+X), so the +X face is OPEN (thumb shaft) and the
-// top (+Z) is open too. The 4 keys are on the other faces, press
-// surfaces facing INWARD — the thumb pushes OUTWARD against each:
+// Thumb cluster — 4-key cage on the TOP edge, CRADLE frame.
+// Thumb lies along the edge (axis ~ X), sits on the +Y outer side,
+// enters from +X (palm). hc = thumb_cube_size / 2.
 //
-//   HOME   at  (0,  0,  0)            cap normal +Z   push DOWN
-//   -X     at  (-hc, 0, hc)           cap normal +X   PUSH forward (tip in)
-//   +Y     at  (0,  hc, hc)           cap normal -Y   lateral toward pinky
-//   -Y     at  (0, -hc, hc)           cap normal +Y   lateral toward index
-//
-// Open faces: +X (thumb entry, toward palm) and +Z (top). where
-// hc = thumb_cube_size / 2.
+//   HOME   (0,  hc, 0)  rotate[-90,0,0] -> cap +Y  press toward phone (-Y)
+//   LEFT   (0,  0, hc)  no rot          -> cap +Z  rock to back
+//   RIGHT  (0,  0,-hc)  rotate[180,0,0] -> cap -Z  rock to front
+//   4TH    (-hc,hc, 0)  rotate[-90,0,0] -> cap +Y  extend inboard along edge
 module thumb_cluster_local() {
   hc = thumb_cube_size / 2;
-  translate(thumb_anchor)
-    rotate([0, thumb_pitch_y, thumb_yaw_z]) {
-      // HOME — parallel to screen, no rotation
-      translate([0, 0, 0])
+  translate([thumb_edge_x, shell_y_max - case_wall_thk, thumb_edge_z])
+    rotate([0, 0, thumb_edge_yaw]) {
+      // HOME — press toward phone, cap faces +Y (outward to thumb)
+      translate([0, hc, 0])
+        rotate([-90, 0, 0])
+          key_preview();
+      // LEFT cage — back side, cap +Z
+      translate([0, 0, hc])
         key_preview();
-      // -X face — cap normal +X, pressed by thumb tip pushing forward
-      translate([-hc, 0, hc])
-        rotate([0, 90, 0])
+      // RIGHT cage — front side, cap -Z
+      translate([0, 0, -hc])
+        rotate([180, 0, 0])
           key_preview();
-      // +Y face — cap normal -Y, pressed by lateral tip toward pinky
-      translate([0, hc, hc])
-        rotate([90, 0, 0])
-          key_preview();
-      // -Y face — cap normal +Y, pressed by lateral tip toward index
-      translate([0, -hc, hc])
+      // 4TH — extend inboard along the edge, cap +Y
+      translate([-hc, hc, 0])
         rotate([-90, 0, 0])
           key_preview();
     }
@@ -437,14 +433,16 @@ module half_shell_local() {
           cube([shell_x_step - shell_x_seam,
                 shell_y_max - shell_y_min,
                 shell_z_short_top], center = true);
-      // Shoulder wing — small +X bump for the thumb cluster.
-      color([0.75, 0.7, 0.7, 0.45])
-        translate([(shell_x_outboard + wing_x_outboard)/2,
-                   (wing_y_min + wing_y_max)/2,
-                   wing_z_top / 2])
-          cube([wing_x_outboard - shell_x_outboard,
-                wing_y_max - wing_y_min,
-                wing_z_top], center = true);
+      // Shoulder wing — retired (wing_x_extension=0). Guarded so zero
+      // doesn't make a degenerate cube.
+      if (wing_x_extension > 0)
+        color([0.75, 0.7, 0.7, 0.45])
+          translate([(shell_x_outboard + wing_x_outboard)/2,
+                     (wing_y_min + wing_y_max)/2,
+                     wing_z_top / 2])
+            cube([wing_x_outboard - shell_x_outboard,
+                  wing_y_max - wing_y_min,
+                  wing_z_top], center = true);
     }
 
     // Phone cavity — full L length (continuous across both zones).
@@ -477,18 +475,15 @@ module half_shell_local() {
              shell_z_top - shell_z_short_top + 0.02],
            center = true);
 
-    // Shoulder wing cavity — extends INBOARD into the main shell area
-    // in the wing's Y range, so the cluster's caps can flow freely
-    // between wing and main keywell without hitting an internal wall.
-    // X starts at shell_x_step + case_wall_thk (same as main high cavity)
-    // and ends at wing_x_outboard - case_wall_thk.
-    translate([(shell_x_step + case_wall_thk + wing_x_outboard - case_wall_thk)/2,
-               (wing_y_min + case_wall_thk + wing_y_max - case_wall_thk)/2,
-               (phone_thk + case_back_thk + wing_z_top)/2])
-      cube([wing_x_outboard - shell_x_step - 2*case_wall_thk,
-            wing_y_max - wing_y_min - 2*case_wall_thk,
-            wing_z_top - phone_thk - case_back_thk + 0.01],
-           center = true);
+    // Shoulder wing cavity — guarded (retired with the wing).
+    if (wing_x_extension > 0)
+      translate([(shell_x_step + case_wall_thk + wing_x_outboard - case_wall_thk)/2,
+                 (wing_y_min + case_wall_thk + wing_y_max - case_wall_thk)/2,
+                 (phone_thk + case_back_thk + wing_z_top)/2])
+        cube([wing_x_outboard - shell_x_step - 2*case_wall_thk,
+              wing_y_max - wing_y_min - 2*case_wall_thk,
+              wing_z_top - phone_thk - case_back_thk + 0.01],
+             center = true);
   }
 
   // SEAM magnet pockets — on the inboard (-X) wall, perpendicular to X
@@ -512,17 +507,17 @@ module hand_right() {
   translate([hand_anchor_x, hand_anchor_y, hand_anchor_z])
     rotate([hand_tent_x, hand_pitch_y, 0]) {
       keywell_local();
-      thumb_cluster_local();
     }
 }
 
 // Right-hand half-shell in cased-phone frame. The cradle's own origin
 // is the seam plane (x=0), so we just call it directly; no
 // hand_anchor offset (the keywell math inside still uses hand_anchor).
-// Palm activation inset rides on the shell's outboard wall.
+// Palm activation inset + thumb cage ride on the shell (cradle frame).
 module hand_right_shell() {
   half_shell_local();
   palm_activation_local();
+  thumb_cluster_local();
 }
 
 // Mirror right hand across the YZ plane.
