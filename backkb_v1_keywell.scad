@@ -263,17 +263,16 @@ rim_magnets = [
 /* [Palm Key — grip-activation dead-man switch] */
 // NOT a normal keycode. Both palm keys (one per half) must be held for
 // the board to go active — signals "gripped between two hands", blocks
-// stray presses when stowed / one-handed. INSET flush into the palm-
-// rest surface so the resting heel presses it just by gripping.
-// (See memory: palm key = grip-activation dead-man.)
+// stray presses when stowed / one-handed. (See memory Item #1716.)
 //
-// Anchor in hand-local frame. Placed on the outboard palm-rest region,
-// +Y side (opposite the thumb cube at -Y) where the palm heel lands.
-palm_anchor      = [ 22, 18, 0 ];
-palm_yaw_z       = 0;    // [-45:1:45]
-palm_pitch_y     = 0;    // [-45:1:30]
+// Placement: INSET into the OUTBOARD END FACE (+X wall) of each half,
+// cap facing +X. Pressed by the palm squeezing INWARD as the hands grip
+// the device between them — the natural "I'm holding this" gesture.
+// Cradle-frame Y/Z position on that wall.
+palm_face_y      = 8;    // [-30:1:40]   // Y on the outboard wall
+palm_face_z      = 20;   // [10:0.5:32]  // Z (height) on the outboard wall
 palm_inset_xy    = 16;   // [10:0.5:24]  // recess pocket footprint
-palm_inset_depth = 3;    // [1:0.5:8]    // how deep the key sits below surface
+palm_inset_depth = 3;    // [1:0.5:8]    // recess depth into the wall
 
 /* [Hidden] */
 // Anything below this group marker is hidden from the Customizer panel
@@ -377,24 +376,25 @@ module thumb_cluster_local() {
     }
 }
 
-// Palm key — grip-activation dead-man switch, INSET flush into the
-// palm-rest surface. Rendered as a recessed pocket (rim frame) with the
-// switch flush at the bottom, colored GREEN to mark it as the special
-// activation key (distinct from the blue keycap previews).
-module palm_key_local() {
-  translate(palm_anchor)
-    rotate([0, palm_pitch_y, palm_yaw_z]) {
-      // Recess rim — a frame showing the inset pocket walls.
-      color([0.6, 0.6, 0.65, 0.5])
-        difference() {
-          cube([palm_inset_xy + 4, palm_inset_xy + 4, palm_inset_depth],
-               center = true);
-          cube([palm_inset_xy, palm_inset_xy, palm_inset_depth + 1],
-               center = true);
-        }
+// Palm key — grip-activation dead-man switch, INSET into the outboard
+// END WALL (+X face), cap facing +X (pressed by inward palm squeeze).
+// Rendered in CRADLE frame (structural, not part of the hand keywell).
+// Recessed pocket rim (grey) + switch flush at the bottom (green).
+module palm_activation_local() {
+  translate([shell_x_outboard, palm_face_y, palm_face_z])
+    rotate([0, 90, 0]) {            // local +Z -> world +X (into wall)
+      // Recess rim — frame at the wall surface.
+      color([0.6, 0.6, 0.65, 0.6])
+        translate([0, 0, -palm_inset_depth/2])
+          difference() {
+            cube([palm_inset_xy + 4, palm_inset_xy + 4, palm_inset_depth],
+                 center = true);
+            cube([palm_inset_xy, palm_inset_xy, palm_inset_depth + 1],
+                 center = true);
+          }
       // Activation switch — flush at the bottom of the recess (green).
-      translate([0, 0, -palm_inset_depth/2 + plate_thk/2])
-        color([0.3, 0.7, 0.4])
+      color([0.3, 0.7, 0.4])
+        translate([0, 0, -palm_inset_depth + plate_thk/2])
           cube([palm_inset_xy - 2, palm_inset_xy - 2, plate_thk],
                center = true);
     }
@@ -506,21 +506,23 @@ module half_shell_local() {
 }
 
 // Apply hand anchor + whole-hand tilt around the wrist, then render
-// finger keywell + thumb + palm in the hand-local frame.
+// finger keywell + thumb in the hand-local frame. (Palm activation is
+// in the SHELL, not the hand keywell — it's on the outboard end wall.)
 module hand_right() {
   translate([hand_anchor_x, hand_anchor_y, hand_anchor_z])
     rotate([hand_tent_x, hand_pitch_y, 0]) {
       keywell_local();
       thumb_cluster_local();
-      palm_key_local();
     }
 }
 
 // Right-hand half-shell in cased-phone frame. The cradle's own origin
 // is the seam plane (x=0), so we just call it directly; no
 // hand_anchor offset (the keywell math inside still uses hand_anchor).
+// Palm activation inset rides on the shell's outboard wall.
 module hand_right_shell() {
   half_shell_local();
+  palm_activation_local();
 }
 
 // Mirror right hand across the YZ plane.
