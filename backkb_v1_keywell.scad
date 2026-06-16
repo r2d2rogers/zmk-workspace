@@ -139,8 +139,12 @@ keycap_xy     = 18;  // [12:0.5:22]
 keycap_h      = 4;   // [3:0.1:9]
 
 /* [Thumb Cluster] */
-// 3-vector anchor [x palm-side, y inboard, z down] in hand-local frame.
-thumb_anchor  = [ 18, -36, -6 ];
+// 3-vector anchor [x palm-side, y inboard, z above floor] in hand-local
+// frame. Z >= 0 keeps the keys above the cradle back panel; negative Z
+// buries them inside cradle material (collides with phone cavity).
+// X reduced so the cluster sits inboard of the outboard cradle wrap.
+// Y pulled inboard 3 mm so the cap edges don't kiss the shell Y wall.
+thumb_anchor  = [ 12, -33, 0 ];
 thumb_yaw_z   = -14; // [-45:1:45]
 thumb_pitch_y = 8;   // [-30:1:30]
 thumb_spacing = 19;  // [12:0.5:24]
@@ -181,8 +185,10 @@ shell_x_outboard = phone_len/2 + case_wall_thk;
 shell_center_x   = (shell_x_seam + shell_x_outboard) / 2;
 // Y extent of the half-shell. Independent of phone_wid — sized to bound
 // the keywell + a buffer. Outer keys at ±36 (col_y), cap edges at ±45.
-shell_y_min      = -47; // [-60:0.5:-30]
-shell_y_max      =  47; // [30:0.5:60]
+// Bumped to ±49 to give the thumb/palm caps a clean ~1.5 mm buffer
+// past the cavity wall.
+shell_y_min      = -49; // [-60:0.5:-30]
+shell_y_max      =  49; // [30:0.5:60]
 shell_z_back     = phone_thk;
 
 /* [L-Profile + Transit Interlock] */
@@ -232,8 +238,10 @@ rim_magnets = [
 ];
 
 /* [Palm Key] */
-// 3-vector anchor [x palm-side, y inboard, z down] in hand-local frame.
-palm_anchor   = [ 32, -36, -12 ];
+// 3-vector anchor [x palm-side, y inboard, z above floor] in hand-local
+// frame. Same Z constraint as thumb (>=0). X moved IN from 32 → 18 so
+// the cap doesn't shoot past the outboard cradle wrap at world X=86.
+palm_anchor   = [ 18, -33, 0 ];
 palm_yaw_z    = -8;   // [-45:1:45]
 palm_pitch_y  = -10;  // [-45:1:30]
 
