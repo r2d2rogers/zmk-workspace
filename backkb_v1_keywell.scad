@@ -222,6 +222,10 @@ transit_x_shift        = (shell_x_step - shell_x_seam) * 2;  // [0:0.5:120]
 transit_mate_gap       = 2;   // [0:0.1:8]
 // Outer corner rounding of the half-shell (vertical edges).
 corner_r_shell         = 3;   // [0:0.5:8]
+// Y line where the +Y (top) edge OPENS above the cradle — full-height
+// wall is kept on -Y (bottom) + both ends, open on +Y for thumb access.
+// In transit the flip swaps it so the other half's wall covers it.
+shell_y_open           = 30;  // [0:0.5:50]
 
 /* [Shoulder Wing — thumb cluster home] */
 // A small +X bump off the main cradle's outboard wall, sized to hold
@@ -522,43 +526,19 @@ module palm_activation_local() {
 // cradle's back panel sits at z = phone_thk .. phone_thk+case_back_thk.
 // The keywell mounts above that.
 module half_shell_local() {
-  // Outer cradle hull — L-profile, then a SINGLE continuous L-shaped
-  // cavity hollow (no internal partition between zones).
-  //
-  // Outer hull: union of the tall zone box (x_step..x_outboard, full
-  // keywell height) and the short zone box (x_seam..x_step, low shell).
-  // Cavity: ONE L-shape with two parts:
-  //   - LOW part — runs the full length (seam to outboard) at z up to
-  //     shell_z_short_top. Below that height the cavity is continuous;
-  //     no inboard partition wall between zones.
-  //   - HIGH part — only in the tall zone above shell_z_short_top.
-  //     This part is inset by case_wall_thk on the inboard side, so the
-  //     OUTER L-step face has a 2.5 mm wall behind it (the actual outer
-  //     step skin) but only ABOVE shell_z_short_top.
+  // Outer hull: a single full-height box (rounded verticals). Walls are
+  // kept full height on -Y (bottom) + both X ends; the +Y (top) edge is
+  // OPENED above the cradle for thumb access. In transit the half is
+  // flipped about X, which swaps the open +Y to -Y, so the OTHER half's
+  // full -Y wall covers this half's opening → a sealed, fully-aligned
+  // box with no overhang (no X-shift interlock needed).
+  floor_z = phone_thk + case_back_thk;   // cradle top (keywell floor)
   difference() {
-    // Outer hull = tall + short + wing boxes booleaned together, outer
-    // vertical edges rounded by corner_r_shell. Tall zone extends a hair
-    // inboard (overlap) so the step junction unions cleanly.
-    union() {
-      color([0.7, 0.7, 0.75, 0.45])
-        rbox(shell_x_step - corner_r_shell, shell_x_outboard,
-             shell_y_min, shell_y_max, shell_z_top, corner_r_shell);
-      color([0.7, 0.7, 0.75, 0.45])
-        rbox(shell_x_seam, shell_x_step,
-             shell_y_min, shell_y_max, shell_z_short_top, corner_r_shell);
-      // Shoulder wing — retired (wing_x_extension=0). Guarded so zero
-      // doesn't make a degenerate cube.
-      if (wing_x_extension > 0)
-        color([0.75, 0.7, 0.7, 0.45])
-          translate([(shell_x_outboard + wing_x_outboard)/2,
-                     (wing_y_min + wing_y_max)/2,
-                     wing_z_top / 2])
-            cube([wing_x_outboard - shell_x_outboard,
-                  wing_y_max - wing_y_min,
-                  wing_z_top], center = true);
-    }
+    color([0.7, 0.7, 0.75, 0.45])
+      rbox(shell_x_seam, shell_x_outboard,
+           shell_y_min, shell_y_max, shell_z_top, corner_r_shell);
 
-    // Phone cavity — full L length (continuous across both zones).
+    // Phone cavity (bottom — where the cased phone sits).
     translate([(shell_x_seam + shell_x_outboard)/2,
                (shell_y_min + shell_y_max)/2,
                (phone_thk - cradle_lip_h) / 2])
@@ -566,37 +546,24 @@ module half_shell_local() {
             phone_wid + 1.0,
             phone_thk - cradle_lip_h + 0.01], center = true);
 
-    // Keywell cavity — LOW part (continuous across seam+tall at low z).
-    // X spans the full L from seam-wall to outboard-wall inset.
-    translate([(shell_x_seam + case_wall_thk + shell_x_outboard - case_wall_thk)/2,
+    // Keywell interior cavity — single box above the cradle, inset by
+    // case_wall_thk so the perimeter walls remain.
+    translate([(shell_x_seam + shell_x_outboard)/2,
                (shell_y_min + shell_y_max)/2,
-               (phone_thk + case_back_thk + shell_z_short_top)/2])
+               (floor_z + shell_z_top)/2 + 0.01])
       cube([shell_x_outboard - shell_x_seam - 2*case_wall_thk,
             (shell_y_max - shell_y_min) - 2*case_wall_thk,
-             shell_z_short_top - phone_thk - case_back_thk + 0.01],
-           center = true);
+             shell_z_top - floor_z], center = true);
 
-    // Keywell cavity — HIGH part (tall zone only, above short ceiling).
-    // Inset case_wall_thk on inboard side so the outer L-step skin is
-    // preserved above shell_z_short_top. Z range overlaps the low part
-    // by 0.01 mm to ensure CSG joins them into one continuous cavity.
-    translate([(shell_x_step + case_wall_thk + shell_x_outboard - case_wall_thk)/2,
-               (shell_y_min + shell_y_max)/2,
-               (shell_z_short_top + shell_z_top)/2 + 0.01])
-      cube([shell_x_outboard - shell_x_step - 2*case_wall_thk,
-            (shell_y_max - shell_y_min) - 2*case_wall_thk,
-             shell_z_top - shell_z_short_top + 0.02],
-           center = true);
-
-    // Shoulder wing cavity — guarded (retired with the wing).
-    if (wing_x_extension > 0)
-      translate([(shell_x_step + case_wall_thk + wing_x_outboard - case_wall_thk)/2,
-                 (wing_y_min + case_wall_thk + wing_y_max - case_wall_thk)/2,
-                 (phone_thk + case_back_thk + wing_z_top)/2])
-        cube([wing_x_outboard - shell_x_step - 2*case_wall_thk,
-              wing_y_max - wing_y_min - 2*case_wall_thk,
-              wing_z_top - phone_thk - case_back_thk + 0.01],
-             center = true);
+    // OPEN the +Y edge above the cradle (thumb side). Removes the +Y
+    // wall + any roof for Y > shell_y_open, leaving the -Y wall (and
+    // both ends) full height.
+    translate([(shell_x_seam + shell_x_outboard)/2,
+               (shell_y_open + shell_y_max + 10)/2,
+               (floor_z + shell_z_top + 10)/2])
+      cube([shell_x_outboard - shell_x_seam + 2,
+            shell_y_max + 10 - shell_y_open,
+            shell_z_top + 10 - floor_z], center = true);
   }
 
   // SEAM magnet pockets — on the inboard (-X) wall, perpendicular to X
@@ -708,21 +675,18 @@ if (render_mode == "in_use") {
   hand_left_shell();
   hand_left();
 } else if (render_mode == "transit") {
-  // No phone; halves face-to-face, mated at the keywell rim. Both
-  // ASYMMETRIC INTERLOCK:
-  //   Right half stays at its native cradle X (3..86), tall zone at +X.
-  //   Left half is flipped 180° around X (bowls face each other) and
-  //   X-shifted by +transit_x_shift so its tall zone now overlaps right
-  //   half's SHORT zone — towers at opposite X extremes, no collision.
-  //   Z lift = shell_z_top + shell_z_short_top + transit_mate_gap.
-  //   That's enough clearance for right's tall zone (z=0..shell_z_top)
-  //   under left's short zone (which after flip+lift starts at the
-  //   lifted plane and extends down by shell_z_short_top).
+  // ALIGNED FLIP-STACK (no X-shift, no overhang).
+  //   Right half sits keys-up. Left half is flipped 180° about X (keys
+  //   down) and lifted straight up — SAME X/Y footprint. The flip swaps
+  //   each half's open +Y edge to -Y, so the right half's full -Y wall
+  //   covers the left's opening and vice versa → a sealed box, fully
+  //   aligned. Lift = 2*shell_z_top + gap so the two full-height walls
+  //   meet at the mid-plane.
   hand_right_shell();
   hand_right();
-  translate([transit_x_shift,
-             0,
-             shell_z_top + shell_z_short_top + transit_mate_gap])
+  // Left half is the mirror part at -X; bring it over onto the right
+  // half's footprint (shift +X by the half width), flip about X, lift.
+  translate([shell_x_seam + shell_x_outboard, 0, 2*shell_z_top + transit_mate_gap])
     rotate([180, 0, 0]) {
       hand_left_shell();
       hand_left();
