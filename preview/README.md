@@ -12,16 +12,18 @@ Raw-link base (tap from phone):
 
 ## 👉 LATEST — look at these first
 
-**Iteration: universal sprung corner clamp + dual-use transit latch** — commit `4a0d6c3`
+**Iteration: tuned corner-clamp jaw (squeeze-to-release confirmed)** — latest commit on branch
 
 1. **[backkb_v1_clamp_phone.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_clamp_phone.png)**
-   — corner clamp gripping an S24U corner (thk 13, r 9).
+   — tuned jaw on an S24U corner (thk 13): V-seat + lead-in chamfer, sprung front lip-finger (grips the thickness range), isolated latch wall.
 2. **[backkb_v1_clamp_tablet.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_clamp_tablet.png)**
-   — the *same* clamp on a ~10″ tablet corner (thk 7, r 8). Device-agnostic in one picture.
+   — the *same* jaw on a ~10″ tablet corner (thk 7). Device-agnostic.
 3. **[backkb_v1_clamp_latch.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_clamp_latch.png)**
-   — transit latch: flexure catch seated in the opposing half's strike pocket.
+   — transit latch **ENGAGED**: catch hooked under the strike ledge.
+4. **[backkb_v1_clamp_release.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_clamp_release.png)**
+   — **RELEASE**: squeeze tilts the latch wall inward, catch clears the strike. (Compare 3 vs 4.)
 
-**Open question:** unlock motion = squeeze-to-release (assumed); tablet center back-foot (TBD).
+**Open:** final jaw dimensions (jaw depth / wall / flexure rate / lip) + whether tablets need a center back-foot.
 
 > Update this block at the top of every iteration so attention lands on the right images.
 
@@ -30,9 +32,10 @@ Raw-link base (tap from phone):
 ## Full index
 
 ### Corner clamp (current mechanism study)
-- `backkb_v1_clamp_phone.png` / `.stl` — clamp on S24U corner.
-- `backkb_v1_clamp_tablet.png` / `.stl` — clamp on tablet corner (same jaw).
-- `backkb_v1_clamp_latch.png` / `.stl` — transit latch engaged in strike.
+- `backkb_v1_clamp_phone.png` / `.stl` — tuned jaw on S24U corner.
+- `backkb_v1_clamp_tablet.png` / `.stl` — same jaw on tablet corner.
+- `backkb_v1_clamp_latch.png` / `.stl` — transit latch ENGAGED (catch under strike ledge).
+- `backkb_v1_clamp_release.png` / `.stl` — squeeze-to-release (latch wall tilted, catch clear).
 
 ### Keywell + transit (the half geometry)
 - `backkb_v1_keywell.png` / `.stl` — sculpted dactyl keywell, both halves docked (in-use).

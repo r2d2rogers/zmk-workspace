@@ -41,7 +41,7 @@ $fn = 48;
 /* [Render Mode] */
 // Which configuration to render — in_use (phone + halves docked),
 // transit (interlocked pocket brick), or right (single half).
-render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch"]
+render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch", "clamp_release"]
 
 /* [Phone Body — S24U bare] */
 // Bare S24U dimensions (mm) — only adjust if Samsung ever changes.
@@ -307,6 +307,8 @@ clamp_jaw_depth   = 16;  // [8:0.5:30]  reach along each edge from corner
 clamp_wall_thk    = 3.0; // [1.5:0.1:6] jaw wall thickness
 clamp_lip_z       = 3.5; // [0:0.5:8]   lip onto device front face (Z grip)
 clamp_height_z    = 11;  // [6:0.5:20]  jaw height spanning device thickness
+clamp_chamfer     = 2.0; // [0:0.1:5]   lead-in chamfer on grip-wall top edge
+clamp_squeeze_demo= 3.0; // [0:0.1:8]   latch-wall inward travel for release view
 // Flexure (the spring). Thin cantilever on the long-edge arm; a slot
 // behind it lets it deflect outward to admit the corner / release latch.
 clamp_flex_thk    = 1.6; // [0.8:0.1:3] flexure wall (spring rate)
@@ -707,49 +709,94 @@ module demo_device_corner(dev) {
     translate([-w/2, -l/2, -t]) rrect_prism(w, l, t, r);
 }
 
-// One corner clamp in local corner frame. flex_open = modeled outward
-// deflection of the flexure (0 = relaxed/gripping; >0 = squeezed open).
-module corner_clamp(flex_open = 0) {
+// Tuned corner clamp in local corner frame.
+//   squeeze = inward (-X) travel of the latch wall's free end. 0 = relaxed
+//             (catch engaged / gripping); >0 = squeezed (catch retracted →
+//             device admits / transit releases).
+//
+// Anatomy (all parametric, [Corner Clamp] group):
+//   - +Y long-edge grip wall, FIXED, lead-in chamfer on its top-inner edge.
+//   - +X short-end wall is the LATCH FLEXURE — isolated from the corner
+//     pier by a slot so its free (bottom) end bends -X. Carries the catch.
+//   - corner pier + back tie join both walls to the keyboard half.
+//   - sprung FRONT LIP-FINGER on the +Y wall: bottom cantilever reaching
+//     inward (-Y) that presses the device front face → grips the 7–13 mm
+//     thickness range. Lead-in ramp on its underside.
+//   - CATCH on the latch wall's +X face: ramp on top (snaps over the strike
+//     ledge when stacking), flat hook underneath (retains until squeezed).
+module corner_clamp(squeeze = 0) {
   jd = clamp_jaw_depth; wt = clamp_wall_thk; hz = clamp_height_z;
-  // L-bracket: two arms on the outward faces + front-lip flanges.
+  lip = clamp_lip_z; ch = clamp_chamfer; lw = clamp_flex_thk;
+  sl = clamp_flex_slot;
+
+  // ---- Fixed +Y long-edge grip wall (with top-inner lead-in chamfer) ----
+  color([0.62, 0.64, 0.70])
+    difference() {
+      translate([-jd, 0, -hz]) cube([jd + wt, wt, hz]);
+      // chamfer the inner-top edge (runs along X at y=0,z=0)
+      translate([-jd - 1, 0, 0]) rotate([45, 0, 0])
+        translate([0, -ch*0.71, -ch*0.71]) cube([jd + wt + 2, ch*1.42, ch*1.42]);
+    }
+
+  // ---- Corner pier + back tie (joins walls to the keyboard half) ----
   color([0.62, 0.64, 0.70]) {
-    // arm on the +Y long-edge face
-    translate([-jd, 0, -hz])      cube([jd + wt, wt, hz]);
-    // arm on the +X short-end face
-    translate([0, -jd, -hz])      cube([wt, jd + wt, hz]);
-    // front lips (reach inward over the device front face → Z trap)
-    translate([-jd, -clamp_lip_z, -hz]) cube([jd + wt, clamp_lip_z + wt, wt]);
-    translate([-clamp_lip_z, -jd, -hz]) cube([clamp_lip_z + wt, jd + wt, wt]);
+    translate([0, 0, -hz]) cube([wt, wt, hz]);           // corner pier
+    translate([-jd, -jd, 0]) cube([2*wt, 2*wt, wt]);      // L back tie near corner
   }
-  // Flexure tab on the outboard (+X) face of the short-end arm: anchored
-  // at the corner end, standing off by a deflection slot, carrying the
-  // transit catch on its +X exterior. flex_open shifts its free portion
-  // +X to show the squeeze-to-release / device-admit motion.
-  translate([wt + clamp_flex_slot + flex_open, -clamp_flex_len, -hz]) {
-    color([0.30, 0.55, 0.85]) cube([clamp_flex_thk, clamp_flex_len, hz]);
-    // catch bump (faces +X, snaps into the opposing half's strike)
-    color([0.90, 0.45, 0.30])
-      translate([clamp_flex_thk, (clamp_flex_len - clamp_catch_len)/2, -hz/2 + hz/2])
-        translate([0, 0, hz/2 - clamp_catch_len/2])
-          rotate([0, 90, 0])
-            cylinder(h = clamp_catch_h, r1 = clamp_catch_len/2, r2 = clamp_catch_len/4);
-  }
+
+  // ---- Sprung FRONT LIP-FINGER on the +Y wall (Z / thickness grip) ----
+  // Cantilever reaching inward at the jaw bottom; deflection slot is the
+  // gap up to the wall above it. Lead-in ramp on the underside so the
+  // device slides in over it.
+  color([0.45, 0.70, 0.55])
+    translate([-jd, -lip, -hz])
+      difference() {
+        cube([jd + wt, lip + wt, wt]);
+        // underside lead-in ramp (inner edge, runs along X)
+        translate([-1, -0.01, 0]) rotate([45, 0, 0])
+          translate([0, -wt*0.6, -wt*0.6]) cube([jd + wt + 2, wt*1.2, wt*1.2]);
+      }
+
+  // ---- Latch flexure: the +X short-end wall, isolated by a slot ----
+  // Anchored at the top (z≈0, keyboard side); free at the bottom. squeeze
+  // skews its free end -X. Modeled as a hinge tilt about the top edge.
+  flex_y0 = -jd + sl;                 // slot isolates it from the corner pier
+  color([0.30, 0.55, 0.85])
+    translate([0, flex_y0, 0])
+      rotate([0, atan2(squeeze, hz), 0])    // tilt free end inward by `squeeze`
+        translate([0, 0, -hz])
+          cube([lw, (jd) - sl, hz]);
+
+  // ---- Catch on the latch wall's +X face (ramp up / hook down) ----
+  // Triangular prism along Y: base on the wall, ramp face up (insertion),
+  // flat face down (retention). Sits near the free (lower) end.
+  catch_z = -hz + hz*0.30;             // ~1/3 up from the bottom
+  color([0.90, 0.45, 0.30])
+    translate([0, flex_y0, 0])
+      rotate([0, atan2(squeeze, hz), 0])
+        translate([lw, (jd - sl - clamp_catch_len)/2 + 0.0, catch_z])
+          rotate([-90, 0, 0])
+            linear_extrude(height = clamp_catch_len)
+              polygon([[0, 0], [clamp_catch_h, 0], [0, clamp_catch_h*1.8]]);
 }
 
-// Transit strike: the recess on the opposing half's shell wall that the
-// catch seats into. Rendered as a thin wall with a pocket, for the latch
-// demo only (in the real build it's cut into half_shell_local's +X wall).
+// Transit strike: the ledge/recess on the opposing half's shell that the
+// catch hooks under. Shown for the latch demo; in the real build it's cut
+// into half_shell_local's mating wall.
 module transit_strike() {
-  color([0.62, 0.64, 0.70, 0.6])
+  jd = clamp_jaw_depth; wt = clamp_wall_thk; hz = clamp_height_z;
+  lw = clamp_flex_thk; sl = clamp_flex_slot;
+  flex_y0 = -jd + sl;
+  x0 = lw + clamp_catch_h;             // strike face just outboard of the catch
+  catch_z = -hz + hz*0.30;
+  color([0.66, 0.66, 0.72, 0.55])
     difference() {
-      translate([clamp_wall_thk + clamp_flex_slot + clamp_flex_thk,
-                 -clamp_flex_len, -clamp_height_z])
-        cube([clamp_catch_h + 2.2, clamp_flex_len, clamp_height_z]);
-      // pocket the catch drops into (slightly oversized)
-      translate([clamp_wall_thk + clamp_flex_slot + clamp_flex_thk - 0.01,
-                 -clamp_flex_len + (clamp_flex_len - clamp_catch_len)/2 - 0.6,
-                 -clamp_height_z + clamp_height_z/2 - clamp_catch_len/2 - 0.6])
-        cube([clamp_catch_h + 0.4, clamp_catch_len + 1.2, clamp_catch_len + 1.2]);
+      translate([x0, flex_y0, -hz]) cube([wt, jd - sl, hz]);
+      // notch the catch hooks into (ledge at the catch's flat underside)
+      translate([x0 - 0.01,
+                 flex_y0 + (jd - sl - clamp_catch_len)/2 - 0.5,
+                 catch_z - 0.4])
+        cube([clamp_catch_h + 0.5, clamp_catch_len + 1.0, clamp_catch_h*1.8 + 0.8]);
     }
 }
 
@@ -821,10 +868,14 @@ if (render_mode == "in_use") {
   // SAME clamp, ~10" tablet corner — shows the device-agnostic span.
   demo_device_corner(demo_tablet);
   corner_clamp(0);
+} else if (render_mode == "clamp_release") {
+  // Squeeze-to-release: latch wall tilted inward by clamp_squeeze_demo,
+  // catch retracted clear of the strike. Same view as clamp_latch.
+  corner_clamp(clamp_squeeze_demo);
+  transit_strike();
 } else if (render_mode == "clamp_latch") {
-  // Transit latch: the flexure catch seated in the opposing half's
-  // strike pocket (relaxed). Squeezing the flexure +X (flex_open) lifts
-  // the catch out → release. Strike block stands in for the mating shell.
+  // Transit latch ENGAGED (relaxed): catch hooked under the strike ledge.
+  // Squeezing the latch wall inward (clamp_release mode) frees it.
   corner_clamp(0);
   transit_strike();
 }
