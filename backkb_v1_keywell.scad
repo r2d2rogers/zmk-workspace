@@ -41,7 +41,7 @@ $fn = 48;
 /* [Render Mode] */
 // Which configuration to render — in_use (phone + halves docked),
 // transit (interlocked pocket brick), or right (single half).
-render_mode = "in_use"; // ["in_use", "transit", "right"]
+render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch"]
 
 /* [Phone Body — S24U bare] */
 // Bare S24U dimensions (mm) — only adjust if Samsung ever changes.
@@ -287,6 +287,38 @@ palm_face_y      = 8;    // [-30:1:40]   // Y on the outboard wall
 palm_face_z      = 20;   // [10:0.5:32]  // Z (height) on the outboard wall
 palm_inset_xy    = 16;   // [10:0.5:24]  // recess pocket footprint
 palm_inset_depth = 3;    // [1:0.5:8]    // recess depth into the wall
+
+/* [Corner Clamp — universal sprung grip + transit latch] */
+// The cradle is REPLACED by a sprung corner clamp at each half's
+// outboard lower corner. It grips the device's lower-outer CORNER (two
+// edges at once → self-centering on any rectangular device), so device
+// size becomes spring travel, not a molded dimension. Phone and tablet
+// corners are both ~90°, so the SAME jaw grips both — only the corner
+// radius differs and the V-faces ride the straight edge just past it.
+//
+// DUAL USE (Rob, conv #119):
+//   - IN USE  : flexure presses the device corner into the fixed V.
+//   - IN TRANSIT: the same flexure's CATCH snaps into a STRIKE pocket on
+//     the opposing half's shell, locking the brick. Squeezing the jaw
+//     open (the device-insert motion) is ALSO the transit RELEASE.
+//     [ASSUMPTION flagged to Rob: squeeze-to-release. If he wants a
+//      separate tab / slide release, only the catch + slot change.]
+clamp_jaw_depth   = 16;  // [8:0.5:30]  reach along each edge from corner
+clamp_wall_thk    = 3.0; // [1.5:0.1:6] jaw wall thickness
+clamp_lip_z       = 3.5; // [0:0.5:8]   lip onto device front face (Z grip)
+clamp_height_z    = 11;  // [6:0.5:20]  jaw height spanning device thickness
+// Flexure (the spring). Thin cantilever on the long-edge arm; a slot
+// behind it lets it deflect outward to admit the corner / release latch.
+clamp_flex_thk    = 1.6; // [0.8:0.1:3] flexure wall (spring rate)
+clamp_flex_len    = 20;  // [10:0.5:34] flexure cantilever length
+clamp_flex_slot   = 2.0; // [1:0.1:5]   deflection slot width behind flexure
+clamp_flex_travel = 2.5; // [0:0.1:6]   modeled outward deflection for demos
+// Transit latch catch on the flexure exterior + its strike pocket.
+clamp_catch_h     = 1.8; // [0:0.1:4]   catch bump protrusion
+clamp_catch_len   = 6;   // [2:0.5:12]  catch bump length along edge
+// Demo device sizes (corner grip render). [w_short, l_long, thk, corner_r]
+demo_phone  = [ 84, 167, 13, 9 ];   // S24U in Otterbox (matches phone_*)
+demo_tablet = [ 170, 250, 7, 8 ];   // ~10" tablet corner
 
 /* [Hidden] */
 // Anything below this group marker is hidden from the Customizer panel
@@ -652,6 +684,76 @@ module phone_body() {
 // once the per-column parameters are tuned to your fingertip rest.
 
 // ---------------------------------------------------------------------
+//  CORNER CLAMP — universal sprung grip + transit latch (conv #119)
+// ---------------------------------------------------------------------
+// Local frame: the device's lower-outer corner sits at the origin. The
+// device body fills x<=0, y<=0; its BACK face (keyboard side) is z=0 and
+// its front/screen face is at z=-thk. The clamp is an L-bracket hugging
+// the two outward faces (+X short-end face, +Y long-edge face) with a
+// front lip for Z retention, plus a flexure tab on the outboard (+X)
+// face carrying the transit catch. Cross-back tension (elastic/spring
+// between halves) supplies the in-use grip force; the flexure handles
+// thickness compliance + the transit latch.
+
+module rrect_prism(w, l, t, r) {
+  hull() for (sx = [-1,1]) for (sy = [-1,1])
+    translate([sx*(w/2 - r), sy*(l/2 - r), 0]) cylinder(h = t, r = r);
+}
+
+// Demo device: rounded slab with its +X,+Y corner at the origin.
+module demo_device_corner(dev) {
+  w = dev[0]; l = dev[1]; t = dev[2]; r = dev[3];
+  color([0.16, 0.16, 0.20, 0.45])
+    translate([-w/2, -l/2, -t]) rrect_prism(w, l, t, r);
+}
+
+// One corner clamp in local corner frame. flex_open = modeled outward
+// deflection of the flexure (0 = relaxed/gripping; >0 = squeezed open).
+module corner_clamp(flex_open = 0) {
+  jd = clamp_jaw_depth; wt = clamp_wall_thk; hz = clamp_height_z;
+  // L-bracket: two arms on the outward faces + front-lip flanges.
+  color([0.62, 0.64, 0.70]) {
+    // arm on the +Y long-edge face
+    translate([-jd, 0, -hz])      cube([jd + wt, wt, hz]);
+    // arm on the +X short-end face
+    translate([0, -jd, -hz])      cube([wt, jd + wt, hz]);
+    // front lips (reach inward over the device front face → Z trap)
+    translate([-jd, -clamp_lip_z, -hz]) cube([jd + wt, clamp_lip_z + wt, wt]);
+    translate([-clamp_lip_z, -jd, -hz]) cube([clamp_lip_z + wt, jd + wt, wt]);
+  }
+  // Flexure tab on the outboard (+X) face of the short-end arm: anchored
+  // at the corner end, standing off by a deflection slot, carrying the
+  // transit catch on its +X exterior. flex_open shifts its free portion
+  // +X to show the squeeze-to-release / device-admit motion.
+  translate([wt + clamp_flex_slot + flex_open, -clamp_flex_len, -hz]) {
+    color([0.30, 0.55, 0.85]) cube([clamp_flex_thk, clamp_flex_len, hz]);
+    // catch bump (faces +X, snaps into the opposing half's strike)
+    color([0.90, 0.45, 0.30])
+      translate([clamp_flex_thk, (clamp_flex_len - clamp_catch_len)/2, -hz/2 + hz/2])
+        translate([0, 0, hz/2 - clamp_catch_len/2])
+          rotate([0, 90, 0])
+            cylinder(h = clamp_catch_h, r1 = clamp_catch_len/2, r2 = clamp_catch_len/4);
+  }
+}
+
+// Transit strike: the recess on the opposing half's shell wall that the
+// catch seats into. Rendered as a thin wall with a pocket, for the latch
+// demo only (in the real build it's cut into half_shell_local's +X wall).
+module transit_strike() {
+  color([0.62, 0.64, 0.70, 0.6])
+    difference() {
+      translate([clamp_wall_thk + clamp_flex_slot + clamp_flex_thk,
+                 -clamp_flex_len, -clamp_height_z])
+        cube([clamp_catch_h + 2.2, clamp_flex_len, clamp_height_z]);
+      // pocket the catch drops into (slightly oversized)
+      translate([clamp_wall_thk + clamp_flex_slot + clamp_flex_thk - 0.01,
+                 -clamp_flex_len + (clamp_flex_len - clamp_catch_len)/2 - 0.6,
+                 -clamp_height_z + clamp_height_z/2 - clamp_catch_len/2 - 0.6])
+        cube([clamp_catch_h + 0.4, clamp_catch_len + 1.2, clamp_catch_len + 1.2]);
+    }
+}
+
+// ---------------------------------------------------------------------
 //  RENDER TARGETS — switch via render_mode (override on CLI with -D)
 // ---------------------------------------------------------------------
 //
@@ -711,4 +813,18 @@ if (render_mode == "in_use") {
 } else if (render_mode == "right") {
   hand_right_shell();
   hand_right();
+} else if (render_mode == "clamp_phone") {
+  // Universal corner clamp gripping an S24U-class corner.
+  demo_device_corner(demo_phone);
+  corner_clamp(0);
+} else if (render_mode == "clamp_tablet") {
+  // SAME clamp, ~10" tablet corner — shows the device-agnostic span.
+  demo_device_corner(demo_tablet);
+  corner_clamp(0);
+} else if (render_mode == "clamp_latch") {
+  // Transit latch: the flexure catch seated in the opposing half's
+  // strike pocket (relaxed). Squeezing the flexure +X (flex_open) lifts
+  // the catch out → release. Strike block stands in for the mating shell.
+  corner_clamp(0);
+  transit_strike();
 }
