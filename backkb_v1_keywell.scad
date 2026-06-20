@@ -675,18 +675,35 @@ if (render_mode == "in_use") {
   hand_left_shell();
   hand_left();
 } else if (render_mode == "transit") {
-  // ALIGNED FLIP-STACK (no X-shift, no overhang).
-  //   Right half sits keys-up. Left half is flipped 180° about X (keys
-  //   down) and lifted straight up — SAME X/Y footprint. The flip swaps
-  //   each half's open +Y edge to -Y, so the right half's full -Y wall
-  //   covers the left's opening and vice versa → a sealed box, fully
-  //   aligned. Lift = 2*shell_z_top + gap so the two full-height walls
-  //   meet at the mid-plane.
+  // TWIST-AND-STACK (telescoping C-channels — NOT a fold).
+  //
+  // The two halves are a matched pair of C-channels: each has its full-
+  // height wall on the pinky (-Y) edge and is OPEN on the thumb (+Y)
+  // edge. The transit move is a TWIST about the long axis followed by a
+  // slide-over, so the channels TELESCOPE into one box rather than being
+  // held apart face-to-face.
+  //
+  //   1. TWIST — rotate the left half 180° about the long (X) axis. Its
+  //      pinky wall swaps -Y -> +Y (so it now covers the right half's
+  //      open +Y edge, and the right's -Y wall covers the left's now-open
+  //      -Y edge). Its keys swing to point DOWN (-Z).
+  //   2. MOVE OVER — slide +X by one half-width onto the right footprint.
+  //      Because the left half is the mirror part, this shift lands its
+  //      DEEP trigger zone (outboard) directly over the right half's
+  //      SHALLOW fingertip zone and vice-versa — the depth L-profiles
+  //      interlock automatically.
+  //   3. TELESCOPE — drop it DOWN so the walls slide past each other on
+  //      opposite Y edges and both key sets share ONE cavity. The trigger
+  //      keys now oppose at 180° and nest into the other's shallow end
+  //      instead of stacking tip-to-tip. z_shift puts the left floor just
+  //      above the right rim; brick height ~= one channel, not two.
+  //
+  // (Old code lifted 2*shell_z_top — that held the channels fully apart,
+  //  doubling thickness. That was the bug.)
+  z_shift = shell_z_top + (phone_thk + case_back_thk) + transit_mate_gap;
   hand_right_shell();
   hand_right();
-  // Left half is the mirror part at -X; bring it over onto the right
-  // half's footprint (shift +X by the half width), flip about X, lift.
-  translate([shell_x_seam + shell_x_outboard, 0, 2*shell_z_top + transit_mate_gap])
+  translate([shell_x_seam + shell_x_outboard, 0, z_shift])
     rotate([180, 0, 0]) {
       hand_left_shell();
       hand_left();
