@@ -322,6 +322,12 @@ clamp_catch_len   = 6;   // [2:0.5:12]  catch bump length along edge
 demo_phone  = [ 84, 167, 13, 9 ];   // S24U in Otterbox (matches phone_*)
 demo_tablet = [ 170, 250, 7, 8 ];   // ~10" tablet corner
 
+// Skirt toggle. false (default) = the new direction: NO phone-cradle box;
+// the half is just the keywell shell from the floor up, and the corner
+// clamps + cross-tension hold the device (keywell underside = back-rest).
+// true = keep the old z 0..floor cradle skirt for comparison.
+phone_skirt = false;
+
 /* [Hidden] */
 // Anything below this group marker is hidden from the Customizer panel
 // but still in scope for the program. Use to stash render constants.
@@ -567,12 +573,17 @@ module half_shell_local() {
   // full -Y wall covers this half's opening → a sealed, fully-aligned
   // box with no overhang (no X-shift interlock needed).
   floor_z = phone_thk + case_back_thk;   // cradle top (keywell floor)
+  // SKIRT-LESS by default: the shell starts at the keywell floor; the
+  // phone is held by the corner clamps + cross-tension, not a box.
+  z0 = phone_skirt ? 0 : floor_z;
   difference() {
     color([0.7, 0.7, 0.75, 0.45])
-      rbox(shell_x_seam, shell_x_outboard,
-           shell_y_min, shell_y_max, shell_z_top, corner_r_shell);
+      translate([0, 0, z0])
+        rbox(shell_x_seam, shell_x_outboard,
+             shell_y_min, shell_y_max, shell_z_top - z0, corner_r_shell);
 
-    // Phone cavity (bottom — where the cased phone sits).
+    // Phone cavity (only with the old skirt — where the cased phone sits).
+    if (phone_skirt)
     translate([(shell_x_seam + shell_x_outboard)/2,
                (shell_y_min + shell_y_max)/2,
                (phone_thk - cradle_lip_h) / 2])
@@ -600,7 +611,9 @@ module half_shell_local() {
             shell_z_top + 10 - floor_z], center = true);
   }
 
-  // SEAM magnet pockets — on the inboard (-X) wall, perpendicular to X
+  // SEAM magnet pockets — only with the old skirt (they lived in the
+  // z 0..phone_thk wall the skirt provided). Clamp-grip replaces them.
+  if (phone_skirt)
   color([0.9, 0.3, 0.3])
     for (m = seam_magnets)
       translate([shell_x_seam + magnet_pocket_h/2 - 0.05, m[1], m[2]])
@@ -632,6 +645,21 @@ module hand_right_shell() {
   half_shell_local();
   palm_activation_local();
   thumb_cluster_local();
+  clamp_on_half();
+}
+
+// Place the corner clamp at THIS half's lower-outer corner (right-hand
+// frame): the device's +X short-edge × -Y (near-user) corner. Local clamp
+// frame has the device filling x<=0,y<=0 with the back at z=0; here the
+// device back (keyboard side) is world z=phone_thk and the corner is at
+// (+phone_len/2, -phone_wid/2). mirror([0,1,0]) turns the clamp's +Y
+// outward face into the -Y (bottom) outward face. The LEFT half inherits
+// the mirror via hand_left_shell, so the two clamps grip the device's two
+// lower-outer corners; cross-tension along X clamps it between the halves.
+module clamp_on_half(squeeze = 0) {
+  translate([phone_len/2, -phone_wid/2, phone_thk])
+    mirror([0, 1, 0])
+      corner_clamp(squeeze);
 }
 
 // Mirror right hand across the YZ plane.

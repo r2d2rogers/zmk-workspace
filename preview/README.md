@@ -12,18 +12,17 @@ Raw-link base (tap from phone):
 
 ## 👉 LATEST — look at these first
 
-**Iteration: tuned corner-clamp jaw (squeeze-to-release confirmed)** — latest commit on branch
+**Iteration: clamp INTEGRATED into the halves (skirt removed)** — latest commit on branch
 
-1. **[backkb_v1_clamp_phone.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_clamp_phone.png)**
-   — tuned jaw on an S24U corner (thk 13): V-seat + lead-in chamfer, sprung front lip-finger (grips the thickness range), isolated latch wall.
-2. **[backkb_v1_clamp_tablet.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_clamp_tablet.png)**
-   — the *same* jaw on a ~10″ tablet corner (thk 7). Device-agnostic.
-3. **[backkb_v1_clamp_latch.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_clamp_latch.png)**
-   — transit latch **ENGAGED**: catch hooked under the strike ledge.
-4. **[backkb_v1_clamp_release.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_clamp_release.png)**
-   — **RELEASE**: squeeze tilts the latch wall inward, catch clears the strike. (Compare 3 vs 4.)
+1. **[backkb_v1_inuse_corner.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_inuse_corner.png)**
+   — IN USE: the right half's corner clamp wrapping the device's lower-outer corner. ✓ grips.
+2. **[backkb_v1_in_use.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_in_use.png)**
+   — IN USE plan: device held *between* the two halves, clamps at the two lower (-Y) corners.
+3. **[backkb_v1_transit_side.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_transit_side.png)**
+   — TRANSIT side: twist-and-stack with clamps. **Note:** the clamps land at diagonal-opposite corners and protrude → brick ~46 mm, not yet latched to each other.
+4. **[backkb_v1_transit.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_transit.png)** — transit iso.
 
-**Open:** final jaw dimensions (jaw depth / wall / flexure rate / lip) + whether tablets need a center back-foot.
+**Decision needed:** how the clamp rotates into transit — lock where it lands (diagonal strikes, accept corner bumps) vs reposition to meet vs fold away. Skirt is gone (`phone_skirt=false`).
 
 > Update this block at the top of every iteration so attention lands on the right images.
 
