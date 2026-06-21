@@ -41,7 +41,7 @@ $fn = 48;
 /* [Render Mode] */
 // Which configuration to render — in_use (phone + halves docked),
 // transit (interlocked pocket brick), or right (single half).
-render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch", "clamp_release", "slide_open", "slide_locked"]
+render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch", "clamp_release", "slide_open", "slide_locked", "transit_sleeve"]
 
 /* [Phone Body — S24U bare] */
 // Bare S24U dimensions (mm) — only adjust if Samsung ever changes.
@@ -343,6 +343,7 @@ sl_len        = 18;   // [8:0.5:34]  channel length along the slide axis (y)
 sl_tongue_len = 14;   // [6:0.5:30]  tongue length (y)
 sl_travel     = 14;   // [4:0.5:30]  how far it slides out (proud) when open
 sl_clearance  = 0.3;  // [0:0.05:1]  tongue/channel print + visual clearance
+sleeve_slide  = 0.55; // [0:0.05:1]  retention-sleeve slide position (1=home)
 
 /* [Hidden] */
 // Anything below this group marker is hidden from the Customizer panel
@@ -880,6 +881,43 @@ module slide_latch(pos = 1) {
 }
 
 // ---------------------------------------------------------------------
+//  TRANSIT BRICK + SLIDE-ON RETENTION SLEEVE
+// ---------------------------------------------------------------------
+// The corner clamps land on the brick's top and bottom faces at OPPOSITE
+// Y ends after the twist (maximally diagonal), so no tongue can bridge
+// them directly. A sleeve that slides on along +Y solves both of Rob's
+// clauses at once: it covers BOTH clamps flush and straps the two halves
+// together. A T-detent (not modeled) clicks it home = the slide-through.
+
+module transit_brick() {
+  z_shift = shell_z_top + (phone_thk + case_back_thk) + transit_mate_gap;
+  hand_right_shell();
+  hand_right();
+  translate([shell_x_seam + shell_x_outboard, 0, z_shift])
+    rotate([180, 0, 0]) { hand_left_shell(); hand_left(); }
+}
+
+// slide: 1 = home (sleeve spans the brick, clamps flush + halves strapped);
+//        0 = pulled off in -Y.
+module transit_sleeve(slide = 1) {
+  clr = 0.8; wall = 3;
+  z_shift = shell_z_top + (phone_thk + case_back_thk) + transit_mate_gap;
+  ix0 = shell_x_seam - clr;                          ix1 = shell_x_outboard + clr;
+  iz0 = (phone_thk - clamp_height_z) - clr;          // bottom-clamp underside
+  iz1 = (z_shift - (phone_thk - clamp_height_z)) + clr; // top-clamp top
+  ylen = (shell_y_max - shell_y_min) + 2*clr;        // spans both clamp ends
+  y0 = shell_y_min - clr - (1 - slide) * (ylen + 8);
+  color([0.85, 0.55, 0.30, 0.45])
+    translate([0, y0, 0])
+      difference() {
+        translate([ix0 - wall, 0, iz0 - wall])
+          cube([(ix1 - ix0) + 2*wall, ylen, (iz1 - iz0) + 2*wall]);
+        translate([ix0, -1, iz0])
+          cube([ix1 - ix0, ylen + 2, iz1 - iz0]);
+      }
+}
+
+// ---------------------------------------------------------------------
 //  RENDER TARGETS — switch via render_mode (override on CLI with -D)
 // ---------------------------------------------------------------------
 //
@@ -963,4 +1001,8 @@ if (render_mode == "in_use") {
 } else if (render_mode == "slide_locked") {
   // Slide-through latch LOCKED: tongue fully slid through → flush + T-locked.
   slide_latch(1.0);
+} else if (render_mode == "transit_sleeve") {
+  // Brick + retention sleeve sliding on along +Y (partially on, action shot).
+  transit_brick();
+  transit_sleeve(sleeve_slide);
 }

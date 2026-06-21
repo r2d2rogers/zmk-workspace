@@ -12,16 +12,14 @@ Raw-link base (tap from phone):
 
 ## 👉 LATEST — look at these first
 
-**Iteration: slide-through latch (transit lock, clamp flush not proud)** — latest commit on branch
+**Iteration: Y-slide wiring → finding → slide-on retention SLEEVE** — latest commit on branch
 
-1. **[backkb_v1_slide_open.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_slide_open.png)**
-   — slide latch OPEN: the T-tongue is proud, about to slide (+Y) into the mating half's channel.
-2. **[backkb_v1_slide_locked.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_slide_locked.png)**
-   — LOCKED (end-on): the T-tongue is nested in the channel, **flush**; the T head (> neck) blocks straight pull-out, so the halves are locked in transit.
+**Finding:** after the twist, the two corner clamps land **maximally diagonal** — right clamp on the +X/−Y/**bottom** face, left clamp on the inboard/+Y/**top** face, ~40 mm apart in Z, each protruding into empty space. So a tongue-on-clamp-into-mating-half can't bridge them. A single Y-slide *sleeve* can, though:
 
-Mechanism study confirming Rob's slide-through latch. Next: wire a tongue onto each clamp + a channel into the mating half where the other half's clamp lands, so the clamps seat flush in the brick.
+1. **[backkb_v1_transit_sleeve.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_transit_sleeve.png)**
+   — a retention SLEEVE slides on along +Y, wrapping the brick's X-Z cross-section. It covers **both** clamps (top + bottom faces) → flush, and **straps the two halves** together (can't separate in Z while on). A T-detent clicks it home = the slide-through lock. Both of Rob's clauses, one slide.
 
-Earlier integration shots (still relevant): [in_use plan](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_in_use.png), [inuse_corner](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_inuse_corner.png), [transit_side](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_transit_side.png).
+Slide-through mechanism study (unchanged, still valid): [slide_open](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_slide_open.png) / [slide_locked](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_slide_locked.png) — the T-slot that locks + flushes.
 
 > Update this block at the top of every iteration so attention lands on the right images.
 
