@@ -41,7 +41,7 @@ $fn = 48;
 /* [Render Mode] */
 // Which configuration to render — in_use (phone + halves docked),
 // transit (interlocked pocket brick), or right (single half).
-render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch", "clamp_release"]
+render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch", "clamp_release", "slide_open", "slide_locked"]
 
 /* [Phone Body — S24U bare] */
 // Bare S24U dimensions (mm) — only adjust if Samsung ever changes.
@@ -327,6 +327,22 @@ demo_tablet = [ 170, 250, 7, 8 ];   // ~10" tablet corner
 // clamps + cross-tension hold the device (keywell underside = back-rest).
 // true = keep the old z 0..floor cradle skirt for comparison.
 phone_skirt = false;
+
+/* [Slide-through Latch] */
+// Transit lock (Rob): the halves SLIDE together and a T-slot tongue rides
+// THROUGH a channel in the mating half, locking them in the transit
+// position AND pulling the corner clamp FLUSH with the outer surface
+// (instead of proud). The T (head wider than neck) means once slid in it
+// can't pull straight out — only slide back. A detent holds it home.
+sl_neck       = 3.0;  // [1:0.1:6]   neck opening height (z)
+sl_head       = 6.0;  // [3:0.1:12]  head cavity height — T-lock, > neck
+sl_neck_depth = 2.0;  // [1:0.1:5]   neck depth (x) before it widens
+sl_depth      = 6.0;  // [3:0.1:12]  total slot depth into the wall (x)
+sl_wall       = 2.5;  // [1:0.1:6]   wall material around the slot
+sl_len        = 18;   // [8:0.5:34]  channel length along the slide axis (y)
+sl_tongue_len = 14;   // [6:0.5:30]  tongue length (y)
+sl_travel     = 14;   // [4:0.5:30]  how far it slides out (proud) when open
+sl_clearance  = 0.3;  // [0:0.05:1]  tongue/channel print + visual clearance
 
 /* [Hidden] */
 // Anything below this group marker is hidden from the Customizer panel
@@ -829,6 +845,41 @@ module transit_strike() {
 }
 
 // ---------------------------------------------------------------------
+//  SLIDE-THROUGH LATCH — transit lock that seats the clamp flush (study)
+// ---------------------------------------------------------------------
+// T-slot tongue (on one half's clamp) rides through a channel in the
+// mating half. Slide along +Y to lock. T head > neck → no straight pull-out.
+
+// 2D T-slot profile in the X/Z plane: narrow neck opening toward -X (entry),
+// wider head deeper in +X. Extruded along Y to make tongue or channel.
+module _tslot_2d() {
+  nd = sl_neck_depth; dp = sl_depth; nk = sl_neck; hd = sl_head;
+  polygon([[0,-nk/2],[nd,-nk/2],[nd,-hd/2],[dp,-hd/2],
+           [dp,hd/2],[nd,hd/2],[nd,nk/2],[0,nk/2]]);
+}
+
+// pos: 1 = locked (tongue fully in, trailing face flush with the wall's
+// y=0 face); 0 = open (tongue slid out -Y by sl_travel → proud).
+module slide_latch(pos = 1) {
+  H = sl_head + 2*sl_wall;
+  // Mating wall (opposing half's shell); -X face at x=0, slot runs along Y.
+  color([0.66, 0.66, 0.72, 0.55])
+    difference() {
+      translate([0, 0, -H/2]) cube([sl_depth + sl_wall, sl_len, H]);
+      translate([0, -1, 0]) rotate([-90, 0, 0])
+        linear_extrude(sl_len + 2) _tslot_2d();
+    }
+  // Tongue (the clamp's coupling) — slides in +Y; flush at pos=1. Inset by
+  // a print clearance so it reads as a distinct part (and prints to fit).
+  y0 = -(1 - pos) * sl_travel;
+  color([0.30, 0.55, 0.85])
+    translate([0, y0, 0]) rotate([-90, 0, 0])
+      linear_extrude(sl_tongue_len) offset(r = -sl_clearance) _tslot_2d();
+  // arrow note: at pos=0 the blue tongue protrudes past the wall (proud);
+  // at pos=1 it is drawn fully inside the channel (flush + T-locked).
+}
+
+// ---------------------------------------------------------------------
 //  RENDER TARGETS — switch via render_mode (override on CLI with -D)
 // ---------------------------------------------------------------------
 //
@@ -906,4 +957,10 @@ if (render_mode == "in_use") {
   // Squeezing the latch wall inward (clamp_release mode) frees it.
   corner_clamp(0);
   transit_strike();
+} else if (render_mode == "slide_open") {
+  // Slide-through latch OPEN: tongue slid out (proud), about to slide in.
+  slide_latch(0.0);
+} else if (render_mode == "slide_locked") {
+  // Slide-through latch LOCKED: tongue fully slid through → flush + T-locked.
+  slide_latch(1.0);
 }

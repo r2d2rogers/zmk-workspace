@@ -12,17 +12,16 @@ Raw-link base (tap from phone):
 
 ## 👉 LATEST — look at these first
 
-**Iteration: clamp INTEGRATED into the halves (skirt removed)** — latest commit on branch
+**Iteration: slide-through latch (transit lock, clamp flush not proud)** — latest commit on branch
 
-1. **[backkb_v1_inuse_corner.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_inuse_corner.png)**
-   — IN USE: the right half's corner clamp wrapping the device's lower-outer corner. ✓ grips.
-2. **[backkb_v1_in_use.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_in_use.png)**
-   — IN USE plan: device held *between* the two halves, clamps at the two lower (-Y) corners.
-3. **[backkb_v1_transit_side.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_transit_side.png)**
-   — TRANSIT side: twist-and-stack with clamps. **Note:** the clamps land at diagonal-opposite corners and protrude → brick ~46 mm, not yet latched to each other.
-4. **[backkb_v1_transit.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_transit.png)** — transit iso.
+1. **[backkb_v1_slide_open.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_slide_open.png)**
+   — slide latch OPEN: the T-tongue is proud, about to slide (+Y) into the mating half's channel.
+2. **[backkb_v1_slide_locked.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_slide_locked.png)**
+   — LOCKED (end-on): the T-tongue is nested in the channel, **flush**; the T head (> neck) blocks straight pull-out, so the halves are locked in transit.
 
-**Decision needed:** how the clamp rotates into transit — lock where it lands (diagonal strikes, accept corner bumps) vs reposition to meet vs fold away. Skirt is gone (`phone_skirt=false`).
+Mechanism study confirming Rob's slide-through latch. Next: wire a tongue onto each clamp + a channel into the mating half where the other half's clamp lands, so the clamps seat flush in the brick.
+
+Earlier integration shots (still relevant): [in_use plan](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_in_use.png), [inuse_corner](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_inuse_corner.png), [transit_side](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_transit_side.png).
 
 > Update this block at the top of every iteration so attention lands on the right images.
 
