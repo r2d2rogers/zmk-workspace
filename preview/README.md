@@ -12,14 +12,16 @@ Raw-link base (tap from phone):
 
 ## 👉 LATEST — look at these first
 
-**Iteration: Y-slide wiring → finding → slide-on retention SLEEVE** — latest commit on branch
+**Iteration: pin-into-mass latch (Rob's call)** — latest commit on branch
 
-**Finding:** after the twist, the two corner clamps land **maximally diagonal** — right clamp on the +X/−Y/**bottom** face, left clamp on the inboard/+Y/**top** face, ~40 mm apart in Z, each protruding into empty space. So a tongue-on-clamp-into-mating-half can't bridge them. A single Y-slide *sleeve* can, though:
+Each corner-clamp **pin slides into the solid MASS** of the brick (the opposing half's body telescopes to within a few mm of this clamp's outer face), locking the halves in transit, while the clamp's **clamping surface recesses FLUSH** into the brick's top/bottom outer surface. Study of exactly that:
 
-1. **[backkb_v1_transit_sleeve.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_transit_sleeve.png)**
-   — a retention SLEEVE slides on along +Y, wrapping the brick's X-Z cross-section. It covers **both** clamps (top + bottom faces) → flush, and **straps the two halves** together (can't separate in Z while on). A T-detent clicks it home = the slide-through lock. Both of Rob's clauses, one slide.
+1. **[backkb_v1_pin_open.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_pin_open.png)**
+   — OPEN: clamp proud, pin withdrawn from the mass.
+2. **[backkb_v1_pin_seated.png](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_pin_seated.png)**
+   — SEATED: pin buried in the mass, clamp surface flush in the recess. (Compare 1 vs 2.)
 
-Slide-through mechanism study (unchanged, still valid): [slide_open](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_slide_open.png) / [slide_locked](https://raw.githubusercontent.com/r2d2rogers/zmk-workspace/claude/backkb-shield-import/preview/backkb_v1_slide_locked.png) — the T-slot that locks + flushes.
+Next: wire the receiving bore + recess into the real brick at each clamp's landing spot. (Sleeve idea retired in favor of this.)
 
 > Update this block at the top of every iteration so attention lands on the right images.
 

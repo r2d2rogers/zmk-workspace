@@ -41,7 +41,7 @@ $fn = 48;
 /* [Render Mode] */
 // Which configuration to render — in_use (phone + halves docked),
 // transit (interlocked pocket brick), or right (single half).
-render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch", "clamp_release", "slide_open", "slide_locked", "transit_sleeve"]
+render_mode = "in_use"; // ["in_use", "transit", "right", "clamp_phone", "clamp_tablet", "clamp_latch", "clamp_release", "slide_open", "slide_locked", "transit_sleeve", "pin_seated", "pin_open"]
 
 /* [Phone Body — S24U bare] */
 // Bare S24U dimensions (mm) — only adjust if Samsung ever changes.
@@ -881,6 +881,43 @@ module slide_latch(pos = 1) {
 }
 
 // ---------------------------------------------------------------------
+//  PIN-INTO-MASS LATCH (study) — Rob's transit lock
+// ---------------------------------------------------------------------
+// Each corner clamp carries a PIN that slides into the solid MASS of the
+// brick (the opposing half's body, which telescopes to within a few mm of
+// this clamp's outer face). The pin holds the halves in the transit
+// config, and the clamp's CLAMPING SURFACE recesses FLUSH into the brick's
+// outer top/bottom surface (a pocket) instead of sitting proud.
+//   pin_pr/pin_len/pin_recess_d are the latch params.
+pin_pr        = 2.4;  // [1:0.1:5]   pin radius
+pin_len       = 18;   // [8:0.5:30]  pin length into the mass
+pin_recess_d  = 5;    // [2:0.5:12]  how deep the clamp recesses into the face
+
+// seated: 1 = pin driven into the mass, clamp flush in the recess.
+//         0 = clamp lifted out + slid back (proud), pin withdrawn.
+module pin_recess(seated = 1) {
+  W = 34; D = 30; H = 20;
+  rd = pin_recess_d; pr = pin_pr;
+  pz = -rd - pr - 1;                       // pin axis Z, in solid mass below pocket
+  // Brick-mass chunk with a top recess pocket + a horizontal (+Y) pin bore.
+  color([0.62, 0.62, 0.72, 0.5])
+    difference() {
+      translate([-W/2, -D/2, -H]) cube([W, D, H]);
+      translate([-W/2 - 1, -D/2 + 3, -rd]) cube([W + 2, D - 3, rd + 0.2]);   // recess
+      translate([0, -D/2 - 0.1, pz]) rotate([-90, 0, 0])
+        cylinder(h = pin_len + 4, r = pr + sl_clearance);                    // bore
+    }
+  // Clamp body (its underside = the clamping surface) + the pin.
+  dy = (1 - seated) * 16; dz = (1 - seated) * (rd + 4);
+  translate([0, -dy, dz]) {
+    color([0.40, 0.58, 0.82])               // body sits in the pocket; top flush at z=0
+      translate([-W/2 + 3, -D/2 + 3, -rd]) cube([W - 6, 13, rd]);
+    color([0.85, 0.45, 0.30])               // pin into the mass
+      translate([0, -D/2 + 3, pz]) rotate([-90, 0, 0]) cylinder(h = pin_len, r = pr);
+  }
+}
+
+// ---------------------------------------------------------------------
 //  TRANSIT BRICK + SLIDE-ON RETENTION SLEEVE
 // ---------------------------------------------------------------------
 // The corner clamps land on the brick's top and bottom faces at OPPOSITE
@@ -1005,4 +1042,10 @@ if (render_mode == "in_use") {
   // Brick + retention sleeve sliding on along +Y (partially on, action shot).
   transit_brick();
   transit_sleeve(sleeve_slide);
+} else if (render_mode == "pin_seated") {
+  // Pin driven into the brick mass; clamp surface flush in the recess.
+  pin_recess(1);
+} else if (render_mode == "pin_open") {
+  // Clamp lifted + slid back (proud); pin withdrawn from the mass.
+  pin_recess(0);
 }
