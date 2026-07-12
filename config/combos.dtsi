@@ -65,3 +65,13 @@ ZMK_COMBO(minus, &kp MINUS,    RM1 RB1,     DEF NAV NUM, COMBO_TERM_SLOW, COMBO_
 ZMK_COMBO(fslh,  &kp FSLH,     RM2 RB2,     DEF NAV NUM, COMBO_TERM_SLOW, COMBO_IDLE_SLOW)
 ZMK_COMBO(pipe,  &kp PIPE,     RM3 RB3,     DEF NAV NUM, COMBO_TERM_SLOW, COMBO_IDLE_SLOW)
 
+/* One-handed mirror (half-QWERTY) — either hand */
+// Chord the two inner thumbs of the active hand to momentarily mirror, so that
+// hand alone reaches the full alphabet. Tight term so a thumb roll won't
+// misfire; DEF only. &mo held for as long as both thumbs stay down.
+ZMK_COMBO(mirror_l, &mo MIRROR, LH0 LH1,    DEF,         COMBO_TERM_FAST, COMBO_IDLE_FAST) // left  (space + enter)
+ZMK_COMBO(mirror_r, &mo MIRROR, RH0 RH1,    DEF,         COMBO_TERM_FAST, COMBO_IDLE_FAST) // right (num   + space)
+// Space without releasing the mirror hold (active-hand bottom-row fingers).
+ZMK_COMBO(mir_spc_l, &kp SPACE, LB1 LB2,    MIRROR,      COMBO_TERM_FAST, COMBO_IDLE_FAST)
+ZMK_COMBO(mir_spc_r, &kp SPACE, RB1 RB2,    MIRROR,      COMBO_TERM_FAST, COMBO_IDLE_FAST)
+

@@ -20,6 +20,7 @@
 #define NUM 3
 #define SYS 4
 #define MOUSE 5
+#define MIRROR 6
 
 #define XXX &none
 #define ___ &trans
@@ -285,6 +286,23 @@ ZMK_BASE_LAYER(Mouse,
     ___           ___           ___           ___           ___         ,   ___           &mkp LCLK     &mkp MCLK     &mkp RCLK     ___         ,
 //╰─────────────┼─────────────┴─────────────┼─────────────┼─────────────┤ ├─────────────┼─────────────┼─────────────┴───────────────────────────╯
                                               ___           ___         ,   U_WH_U        U_WH_D
+//                                          ╰─────────────┴─────────────╯ ╰─────────────┴─────────────╯
+)
+
+// One-handed half-QWERTY. Each key emits its horizontal-mirror position from
+// Base, so either hand can reach the full alphabet while the mirror is held
+// (chord the two inner thumbs of the active hand -> &mo MIRROR, see combos).
+// Plain &kp (no HRMs/morphs) — one-handed mods come from the constant outer
+// column + Nav sticky-mods. Thumbs left transparent so space/enter still work.
+ZMK_BASE_LAYER(Mirror,
+//╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮ ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮
+    &kp P         &kp O         &kp I         &kp U         &kp Y       ,   &kp T         &kp R         &kp E         &kp W         &kp Q       ,
+//├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤ ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
+    &kp SEMI      &kp L         &kp K         &kp J         &kp H       ,   &kp G         &kp F         &kp D         &kp S         &kp A       ,
+//├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤ ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
+    &kp SLASH     &kp DOT       &kp COMMA     &kp M         &kp N       ,   &kp B         &kp V         &kp C         &kp X         &kp Z       ,
+//╰─────────────┼─────────────┴─────────────┼─────────────┼─────────────┤ ├─────────────┼─────────────┼─────────────┴─────────────┴─────────────╯
+                                              ___           ___         ,   ___           ___
 //                                          ╰─────────────┴─────────────╯ ╰─────────────┴─────────────╯
 )
 
