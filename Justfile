@@ -83,13 +83,23 @@ clean-all: clean
 clean-nix:
     nix-collect-garbage --delete-old
 
-# parse & plot keymap
+# parse & plot keymap (shared 34-key layout via ferris/sweep)
 draw:
     #!/usr/bin/env bash
     set -euo pipefail
     keymap -c "{{ draw }}/config.yaml" parse -z "{{ config }}/base.keymap" --virtual-layers Combos >"{{ draw }}/base.yaml"
     yq -Yi '.combos.[].l = ["Combos"]' "{{ draw }}/base.yaml"
     keymap -c "{{ draw }}/config.yaml" draw "{{ draw }}/base.yaml" -k "ferris/sweep" >"{{ draw }}/base.svg"
+
+# draw the FULL 42-key corne. Parses corne.keymap (not base.keymap) so the
+# wrapper expands the outer pinky column + outer thumbs; auto-detects the
+# corne_rotated / 3x6_3 physical layout from the chosen physical-layout.
+draw-corne:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    keymap -c "{{ draw }}/config.yaml" parse -z "{{ config }}/corne.keymap" --virtual-layers Combos >"{{ draw }}/corne42.yaml"
+    yq -Yi '.combos[].l = ["Combos"]' "{{ draw }}/corne42.yaml"
+    keymap -c "{{ draw }}/config.yaml" draw "{{ draw }}/corne42.yaml" -k corne_rotated >"{{ draw }}/corne42.svg"
 
 # initialize west
 init:
