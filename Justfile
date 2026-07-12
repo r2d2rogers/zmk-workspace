@@ -139,6 +139,21 @@ update:
 upgrade-sdk:
     nix flake update --flake .
 
+# Show urob/zmk-config (upstream) commits since our last common ancestor.
+# Requires the 'upstream' remote:
+#   git remote add upstream https://github.com/urob/zmk-config.git
+# Answers "what has urob changed since we last synced?" from the merge-base.
+upstream-log:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    git fetch --no-tags upstream main
+    base=$(git merge-base HEAD upstream/main)
+    echo "urob/zmk-config commits since merge-base ${base:0:9}:"
+    git --no-pager log --oneline --no-decorate "$base"..upstream/main
+    echo
+    echo "Files touched upstream since then:"
+    git --no-pager diff --stat "$base"..upstream/main
+
 # warn user if they are using golang-yq and not python-yq
 [no-exit-message]
 _check_yq_version:
