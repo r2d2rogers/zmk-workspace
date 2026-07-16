@@ -1,66 +1,157 @@
-layout: {zmk_keyboard: murphpad}
+layout: {qmk_keyboard: mechwild/murphpad}
 layers:
-  default: [Ctl+Alt+C, ESC, BSPC, Gui+D, TAB, KP NUM, KP DIVIDE, KP MULTIPLY, F5, KP 7, KP 8, KP 9, MUTE, KP 4, KP 5, KP 6, KP MINUS, nav, KP 1, KP 2, KP 3, KP PLUS,
-    sys, KP 0, KP 0, KP DOT, KP ENTER, KP 0, KP 0, KP DOT]
+  default:
+  - Ctl+C
+  - Ctl+V
+  - Cut
+  - PSCRN
+  - Ctl+Z
+  - Ctl+Sft+Z
+  - Ctl+F
+  - Ctl+A
+  - Ctl+S
+  - Gui+D
+  - Gui+↑
+  - Gui+Tab
+  - {t: num, h: toggle}
+  - Gui+←
+  - Gui+→
+  - $$mdi:play-pause$$
+  - $$mdi:volume-off$$
+  - nav
+  - $$mdi:skip-backward$$
+  - $$mdi:skip-forward$$
+  - Gui+L
+  - btl
+  - sys
+  - AL CALC
+  - AL EMAIL
+  - AL WWW
+  - KP ENTER
+  - ''
+  - ''
+  - ''
+  num:
+  - Ctl+Alt+C
+  - Esc
+  - Bspc
+  - Gui+D
+  - Tab
+  - KP NUM
+  - KP DIVIDE
+  - KP MULTIPLY
+  - F5
+  - KP 7
+  - KP 8
+  - KP 9
+  - {t: num, h: toggle}
+  - KP 4
+  - KP 5
+  - KP 6
+  - KP MINUS
+  - nav
+  - KP 1
+  - KP 2
+  - KP 3
+  - KP PLUS
+  - sys
+  - KP 0
+  - KP DOT
+  - KP ENTER
+  - KP EQUAL
+  - ''
+  - ''
+  - ''
   nav:
-  - F10
   - F1
   - F2
   - F3
   - F4
-  - F11
   - F5
   - F6
   - F7
   - F8
-  - F12
   - F9
-  - {t: ▽, type: trans}
-  - HOME
-  - UP
-  - END
-  - PG UP
+  - F10
+  - F11
+  - F12
+  - {type: trans}
+  - Home
+  - ↑
+  - End
+  - PgUp
   - {type: held}
-  - LEFT
-  - DOWN
-  - RIGHT
-  - PG DN
-  - {t: ▽, type: trans}
-  - INS
-  - DEL
+  - ←
+  - ↓
+  - →
+  - PgDn
+  - {type: trans}
+  - Ins
+  - Del
   - PSCRN
   - ENTER
+  - ''
+  - ''
+  - ''
+  btl:
+  - BT 1
+  - BT 2
+  - BT 3
+  - BT 4
+  - {t: BT, h: '4'}
+  - OUT USB
+  - OUT BLE
+  - OUT TOG
+  - BT CLR
+  - BT CLR ALL
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: held}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
   - ''
   - ''
   - ''
   sys:
   - RGB BRI
   - RGB EFF
-  - OUT USB
-  - OUT BLE
-  - OUT TOG
-  - RGB BRD
   - RGB TOG
   - RGB HUI
+  - RGB BRD
+  - RGB EFR
   - RGB SAI
-  - BT CLR
-  - {t: BT, h: '0'}
-  - ''
-  - ''
-  - {t: BT, h: '7'}
-  - {t: BT, h: '8'}
-  - {t: BT, h: '9'}
-  - ''
-  - {t: ▽, type: trans}
-  - {t: BT, h: '4'}
-  - {t: BT, h: '5'}
-  - {t: BT, h: '6'}
-  - '&sys_reset'
+  - RGB SPI
+  - RGB HUD
+  - RGB SAD
+  - RGB SPD
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - Reset
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - Boot
   - {type: held}
-  - {t: BT, h: '1'}
-  - {t: BT, h: '2'}
-  - {t: BT, h: '3'}
-  - '&bootloader'
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
+  - {type: trans}
   - ''
   - ''
   - ''

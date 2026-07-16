@@ -101,6 +101,14 @@ draw-corne:
     yq -Yi '.combos[].l = ["Combos"]' "{{ draw }}/corne42.yaml"
     keymap -c "{{ draw }}/config.yaml" draw "{{ draw }}/corne42.yaml" -k corne_rotated >"{{ draw }}/corne42.svg"
 
+# draw the murphpad. Uses the shield's LOCAL physical layout (all-1u variant, the
+# dtsi default) via -d, so no network fetch of the QMK info.json is needed.
+draw-murphpad:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    keymap -c "{{ draw }}/config.yaml" parse -z "{{ config }}/murphpad.keymap" >"{{ draw }}/murphpad.yaml"
+    keymap -c "{{ draw }}/config.yaml" draw "{{ draw }}/murphpad.yaml" -d "{{ justfile_directory() }}/zmk/app/boards/shields/murphpad/murphpad-layout.dtsi" >"{{ draw }}/murphpad.svg"
+
 # initialize west
 init:
     west init -l config
