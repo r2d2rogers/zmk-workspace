@@ -19,12 +19,17 @@
 #define OUTER_Num     ___, ___, ___, ___, ___, ___, ___, ___
 #define OUTER_Sys     ___, ___, ___, ___, ___, ___, ___, ___
 #define OUTER_Mouse   ___, ___, ___, ___, ___, ___, ___, ___
+// One-handed numpad sublayer, reached from Mirror (see MirrorNum below).
+#define MIRRORNUM 7
 // Mirror — one-handed essentials on the ACTIVE hand's own outer column. Both
 // hands are mirrored so whichever hand holds the mirror can reach them alone.
 // (Space + the inner-thumb funcs still work: thumbs stay ___ -> inherit DEF.)
-//   top  outer = Backspace   | mid outer = Ctrl/Esc (hold/tap)
-//   bot  outer = sticky Shift | thumb outer = Enter
-#define OUTER_Mirror  &kp BSPC, &kp BSPC, &mt LCTL ESC, &mt LCTL ESC, &sk LSHFT, &sk LSHFT, &kp RET, &kp RET
+//   top  outer = Backspace       | mid outer = hold -> MIRRORNUM (one-handed digits)
+//   bot  outer = sticky Shift     | thumb outer = Enter
+// Hold the mid-outer pinky while on Mirror -> the active hand's 3x3 becomes a
+// 7-8-9/4-5-6/1-2-3 numpad; the layer stays while the pinky is held, so the
+// thumbs are free (you can drop the mirror chord and still type digits).
+#define OUTER_Mirror  &kp BSPC, &kp BSPC, &mo MIRRORNUM, &mo MIRRORNUM, &sk LSHFT, &sk LSHFT, &kp RET, &kp RET
 
 // Wrapper: prepend the layer's outer keys, then destructure 8 outer + 8 halves.
 // The indirection (_CORNE_OUTER) forces OUTER_##name to expand before the
@@ -56,5 +61,21 @@
 
 #include "zmk-helpers/key-labels/42.h"
 #include "base.keymap"
+
+// ─── MirrorNum (layer 7) — one-handed numpad ───────────────────────────────────
+// Reached by holding the mid-outer pinky on Mirror (&mo MIRRORNUM above). Both
+// hands carry an identical 7-8-9 / 4-5-6 / 1-2-3 numpad on their 3 middle columns
+// (ring/middle/index), with 0 on the inner index column, so either active hand
+// works. Number-ROW codes (N1..N0), not keypad, for cross-OS reliability. Outer
+// column keeps Bspc / Shift / Enter; the mid-outer is the held activation (___).
+// Defined via the same per-layer wrapper for outer-column consistency; this is
+// the 8th ZMK_BASE_LAYER call -> index 7 == MIRRORNUM.
+#define OUTER_MirrorNum  &kp BSPC, &kp BSPC, ___, ___, &sk LSHFT, &sk LSHFT, &kp RET, &kp RET
+ZMK_BASE_LAYER(MirrorNum,
+    ___ &kp N7 &kp N8 &kp N9 ___    ,   ___    &kp N7 &kp N8 &kp N9 ___    ,
+    ___ &kp N4 &kp N5 &kp N6 &kp N0 ,   &kp N0 &kp N4 &kp N5 &kp N6 ___    ,
+    ___ &kp N1 &kp N2 &kp N3 ___    ,   ___    &kp N1 &kp N2 &kp N3 ___    ,
+                          ___ ___    ,   ___ ___
+)
 
 /{ chosen { zmk,physical-layout = &foostan_corne_6col_layout; }; };

@@ -271,7 +271,7 @@ layers:
     - W
     - Q
     - Bspc
-    - {t: Esc, h: LCTL}
+    - MirrorNum
     - ;
     - L
     - K
@@ -282,7 +282,7 @@ layers:
     - D
     - S
     - A
-    - {t: Esc, h: LCTL}
+    - MirrorNum
     - {t: Shift, h: sticky}
     - /
     - .
@@ -298,6 +298,49 @@ layers:
     - Enter
     - {type: held}
     - {type: held}
+    - {type: trans}
+    - {type: trans}
+    - Enter
+  MirrorNum:
+    - Bspc
+    - {type: trans}
+    - '7'
+    - '8'
+    - '9'
+    - {type: trans}
+    - {type: trans}
+    - '7'
+    - '8'
+    - '9'
+    - {type: trans}
+    - Bspc
+    - {type: held}
+    - {type: trans}
+    - '4'
+    - '5'
+    - '6'
+    - '0'
+    - '0'
+    - '4'
+    - '5'
+    - '6'
+    - {type: trans}
+    - {type: trans}
+    - {t: Shift, h: sticky}
+    - {type: trans}
+    - '1'
+    - '2'
+    - '3'
+    - {type: trans}
+    - {type: trans}
+    - '1'
+    - '2'
+    - '3'
+    - {type: trans}
+    - {t: Shift, h: sticky}
+    - Enter
+    - {type: trans}
+    - {type: trans}
     - {type: trans}
     - {type: trans}
     - Enter
